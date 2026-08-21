@@ -418,6 +418,183 @@ Résultat : **10 fichiers modifiés, 395 insertions, 1 suppression**.
 
 ---
 
+## Étape 12 : Dockerisation du projet
+
+### 12.1 Dockerfile backend
+
+**Fichier** : `bibliotheque-backend/Dockerfile`
+
+```dockerfile
+# Build stage
+FROM maven:3.9.6-eclipse-temurin-17 AS build
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+COPY src ./src
+RUN mvn clean package -DskipTests -B
+
+# Run stage
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+**Explication** : Build en 2 étapes (multi-stage) :
+1. **Build** : utilise Maven pour compiler et empaqueter l'application en JAR.
+2. **Run** : utilise une image JRE légère (Alpine) pour exécuter le JAR.
+
+### 12.2 Dockerfile frontend
+
+**Fichier** : `bibliotheque-frontend/Dockerfile`
+
+```dockerfile
+# Build stage
+FROM node:18-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build -- --configuration production
+
+# Run stage
+FROM nginx:alpine
+COPY --from=build /app/dist/bibliotheque-frontend /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+**Explication** : Build en 2 étapes :
+1. **Build** : utilise Node.js pour installer les dépendances et compiler l'application Angular en production.
+2. **Run** : utilise Nginx pour servir les fichiers statiques et faire le proxy vers le backend.
+
+### 12.3 Configuration Nginx
+
+**Fichier** : `bibliotheque-frontend/nginx.conf`
+
+```nginx
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://backend:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+**Explication** :
+- `location /` : sert l'application Angular (SPA) avec fallback sur `index.html` pour le routing.
+- `location /api/` : redirige les requêtes API vers le conteneur backend via le réseau Docker.
+
+### 12.4 Docker Compose
+
+**Fichier** : `docker-compose.yml`
+
+```yaml
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: bibliotheque-db
+    environment:
+      POSTGRES_DB: bibliotheque
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Benthe@2001
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./bibliotheque-backend
+      dockerfile: Dockerfile
+    container_name: bibliotheque-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bibliotheque
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: Benthe@2001
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./bibliotheque-frontend
+      dockerfile: Dockerfile
+    container_name: bibliotheque-frontend
+    depends_on:
+      - backend
+    ports:
+      - "4200:80"
+
+volumes:
+  postgres_data:
+```
+
+**Explication** :
+- **db** : conteneur PostgreSQL avec volume persistant et healthcheck.
+- **backend** : conteneur Spring Boot connecté à la base via le réseau Docker (`db:5432`).
+- **frontend** : conteneur Nginx servant l'application Angular sur le port 4200.
+
+### 12.5 Fichiers `.dockerignore`
+
+**Fichiers** : `bibliotheque-backend/.dockerignore` et `bibliotheque-frontend/.dockerignore`
+
+Ces fichiers excluent les dossiers inutiles (`target/`, `node_modules/`, `dist/`, `.git/`) du contexte de build Docker, ce qui accélère considérablement le build.
+
+### 12.6 Variables d'environnement
+
+**Fichier** : `bibliotheque-backend/src/main/resources/application.properties`
+
+```properties
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bibliotheque}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:postgres}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:Benthe@2001}
+```
+
+**Explication** : Les variables d'environnement permettent au backend de se connecter à la base de données Docker (`db:5432`) en production, tout en conservant les valeurs par défaut pour le développement local (`localhost:5432`).
+
+### 12.7 Test de la dockerisation
+
+Les conteneurs ont été démarrés avec succès :
+
+```
+docker compose up -d --build
+```
+
+Résultats des tests :
+
+| Service | URL | Code HTTP |
+|---|---|---|
+| Backend API | `http://localhost:8080/api/reservations` | 200 |
+| Frontend | `http://localhost:4200` | 200 |
+| Swagger UI | `http://localhost:8080/swagger-ui/index.html` | 200 |
+| Proxy Nginx → Backend | `http://localhost:4200/api/reservations` | 200 |
+
+---
+
 ## Récapitulatif des règles de gestion implémentées
 
 | Réf. | Règle | Implémentation |
@@ -445,7 +622,7 @@ Résultat : **10 fichiers modifiés, 395 insertions, 1 suppression**.
 
 ## Fichiers créés/modifiés
 
-### Fichiers créés (9)
+### Fichiers créés (9) — Module Réservation
 
 1. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/entity/StatutReservation.java`
 2. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/entity/Reservation.java`
@@ -457,9 +634,20 @@ Résultat : **10 fichiers modifiés, 395 insertions, 1 suppression**.
 8. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/service/ReservationService.java`
 9. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/controller/ReservationController.java`
 
-### Fichier modifié (1)
+### Fichiers créés (6) — Dockerisation
+
+1. `bibliotheque-backend/Dockerfile`
+2. `bibliotheque-backend/.dockerignore`
+3. `bibliotheque-frontend/Dockerfile`
+4. `bibliotheque-frontend/.dockerignore`
+5. `bibliotheque-frontend/nginx.conf`
+6. `docker-compose.yml`
+
+### Fichiers modifiés (3)
 
 1. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/configuration/WebSecurityConfiguration.java`
+2. `bibliotheque-backend/src/main/resources/application.properties`
+3. `bibliotheque-frontend/src/environments/environment.prod.ts`
 
 ---
 
