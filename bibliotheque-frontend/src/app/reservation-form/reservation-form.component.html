@@ -1,0 +1,48 @@
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="mb-0">Nouvelle réservation</h5>
+  </div>
+  <div class="card-body">
+
+    <!-- Message de succès -->
+    <div *ngIf="messageSucces" class="alert alert-success" role="alert">{{ messageSucces }}</div>
+
+    <!-- Message d'erreur métier (409, 400, 404) -->
+    <div *ngIf="messageErreur" class="alert alert-danger" role="alert">
+      <strong>Refus :</strong> {{ messageErreur }}
+    </div>
+
+    <form (ngSubmit)="soumettreFormulaire()">
+      <div class="row">
+        <div class="col-md-5 mb-3">
+          <label for="livre" class="form-label">Livre</label>
+          <select id="livre" class="form-select" [(ngModel)]="livreId" name="livreId">
+            <option [ngValue]="null" disabled>-- Choisir un livre --</option>
+            <option *ngFor="let livre of livres" [ngValue]="livre.bookId">
+              {{ livre.bookName }} ({{ livre.noOfCopies }} exemplaire{{ livre.noOfCopies > 1 ? 's' : '' }})
+            </option>
+          </select>
+        </div>
+
+        <div class="col-md-5 mb-3">
+          <label for="adherent" class="form-label">Adhérent</label>
+          <select id="adherent" class="form-select" [(ngModel)]="adherentId" name="adherentId">
+            <option [ngValue]="null" disabled>-- Sélectionner un adhérent --</option>
+            <option *ngFor="let adherent of adherents" [ngValue]="adherent.userId">
+              {{ adherent.name }} ({{ adherent.username }})
+            </option>
+          </select>
+        </div>
+
+        <div class="col-md-2 mb-3 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100"
+                  [disabled]="!formulaireValide || enCours">
+            <span *ngIf="enCours" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            {{ enCours ? 'Création...' : 'Réserver' }}
+          </button>
+        </div>
+      </div>
+    </form>
+
+  </div>
+</div>

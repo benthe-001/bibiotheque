@@ -1,0 +1,62 @@
+<div class="container mt-4">
+
+  <h2>Gestion des réservations</h2>
+
+  <!-- ===== ÉTAT : CHARGEMENT ===== -->
+  <div *ngIf="etat === 'CHARGEMENT'" class="text-center my-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Chargement...</span>
+    </div>
+    <p class="mt-3 text-muted">Chargement des réservations...</p>
+  </div>
+
+  <!-- ===== ÉTAT : ERREUR ===== -->
+  <div *ngIf="etat === 'ERREUR'" class="alert alert-danger my-5" role="alert">
+    <h4 class="alert-heading">Impossible de charger les réservations</h4>
+    <p>{{ messageErreur }}</p>
+    <button class="btn btn-primary" (click)="chargerDonnees()">Réessayer</button>
+  </div>
+
+  <!-- ===== ÉTAT : LISTE VIDE ===== -->
+  <div *ngIf="etat === 'VIDE'" class="alert alert-info my-5" role="alert">
+    <h4 class="alert-heading">Aucune réservation</h4>
+    <p>Il n'y a actuellement aucune réservation{{ filtreStatut && filtreStatut !== 'TOUS' ? ' avec le statut ' + filtreStatut : '' }}.</p>
+  </div>
+
+  <!-- ===== ÉTAT : DONNEES ===== -->
+  <div *ngIf="etat === 'DONNEES'">
+
+    <!-- Filtre par statut -->
+    <div class="mb-3">
+      <label for="filtreStatut" class="form-label">Filtrer par statut :</label>
+      <select id="filtreStatut" class="form-select" style="max-width: 300px;"
+              [ngModel]="filtreStatut" (ngModelChange)="filtrerParStatut($event)">
+        <option value="TOUS">Tous</option>
+        <option *ngFor="let statut of statuts" [value]="statut">{{ statut }}</option>
+      </select>
+    </div>
+
+    <!-- Messages de succès / erreur -->
+    <div *ngIf="messageSucces" class="alert alert-success" role="alert">{{ messageSucces }}</div>
+    <div *ngIf="messageErreurAnnulation" class="alert alert-danger" role="alert">{{ messageErreurAnnulation }}</div>
+
+    <!-- Liste des réservations -->
+    <app-reservation-list
+      [reservations]="reservations"
+      [annulationEnCours]="annulationEnCours"
+      (annuler)="annulerReservation($event)">
+    </app-reservation-list>
+
+    <!-- Formulaire de création -->
+    <app-reservation-form
+      [livres]="livres"
+      [adherents]="adherents"
+      [enCours]="formulaireEnCours"
+      [messageSucces]="messageSucces"
+      [messageErreur]="messageErreur"
+      (soumettre)="creerReservation($event.livreId, $event.adherentId)">
+    </app-reservation-form>
+
+  </div>
+
+</div>

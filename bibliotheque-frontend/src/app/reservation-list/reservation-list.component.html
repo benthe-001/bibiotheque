@@ -1,0 +1,39 @@
+<table class="table table-striped table-hover">
+  <thead>
+    <tr>
+      <th>Livre</th>
+      <th>Adhérent</th>
+      <th>Statut</th>
+      <th>Date de réservation</th>
+      <th>Date d'expiration</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let reservation of reservations">
+      <td>{{ reservation.livreTitre }}</td>
+      <td>{{ reservation.adherentNom }}</td>
+      <td>
+        <span class="badge" [ngClass]="{
+          'bg-warning text-dark': reservation.statut === 'EN_ATTENTE',
+          'bg-success': reservation.statut === 'DISPONIBLE',
+          'bg-secondary': reservation.statut === 'ANNULEE',
+          'bg-danger': reservation.statut === 'EXPIREE',
+          'bg-primary': reservation.statut === 'HONOREE'
+        }">{{ reservation.statut }}</span>
+      </td>
+      <td>{{ formaterDate(reservation.dateReservation) }}</td>
+      <td>{{ formaterDate(reservation.dateExpiration) }}</td>
+      <td>
+        <button *ngIf="reservation.statut === 'EN_ATTENTE' || reservation.statut === 'DISPONIBLE'"
+                class="btn btn-warning btn-sm"
+                [disabled]="annulationEnCours === reservation.id"
+                (click)="confirmerAnnulation(reservation.id)">
+          <span *ngIf="annulationEnCours === reservation.id" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          {{ annulationEnCours === reservation.id ? 'Annulation...' : 'Annuler' }}
+        </button>
+        <span *ngIf="reservation.statut !== 'EN_ATTENTE' && reservation.statut !== 'DISPONIBLE'" class="text-muted">—</span>
+      </td>
+    </tr>
+  </tbody>
+</table>
