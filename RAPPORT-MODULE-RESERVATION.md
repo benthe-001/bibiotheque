@@ -14,12 +14,13 @@ Le projet backend est organisé selon le pattern **MVC (Modèle-Vue-Contrôleur)
 
 ```
 bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/
-├── configuration/       → Configuration Spring Security, CORS, JWT
-├── controller/          → Contrôleurs REST (BooksController, BorrowController, AdminController, JwtController)
-├── dao/                 → Repositories JPA (BooksRepository, BorrowRepository, UsersRepository)
-├── entity/              → Entités JPA (Books, Borrow, Users, Role, JwtRequest, JwtResponse)
-├── exceptions/          → Exceptions personnalisées (NotFoundException)
-├── service/             → Services métier (JwtService)
+├── configuration/       → Configuration Spring Security, CORS, JWT, OpenAPI
+├── controller/          → Contrôleurs REST (BooksController, BorrowController, AdminController, JwtController, ReservationController)
+├── dao/                 → Repositories JPA (BooksRepository, BorrowRepository, UsersRepository, ReservationRepository)
+├── dto/                 → DTOs (ReservationRequestDTO, ReservationResponseDTO, ErrorResponseDTO)
+├── entity/              → Entités JPA (Books, Borrow, Users, Role, Reservation, StatutReservation)
+├── exceptions/          → Exceptions personnalisées (NotFoundException, BusinessRuleViolationException, InvalidRequestException, GlobalExceptionHandler)
+├── service/             → Services métier (JwtService, ReservationService)
 └── util/                → Utilitaires (JwtUtil)
 ```
 
@@ -34,6 +35,7 @@ bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/
 | Spring Data JPA | — | Persistance |
 | Spring Security + JWT | — | Authentification |
 | springdoc-openapi-ui | 1.7.0 | Documentation Swagger |
+| Docker / Docker Compose | — | Conteneurisation |
 
 ### 1.3 Patterns observés dans le projet existant
 
@@ -106,7 +108,6 @@ public class Reservation {
 - `dateReservation` : date et heure générée par le serveur, jamais fournie par le client.
 - `dateExpiration` : date et heure calculée (RG-04).
 - `statut` : énumération stockée en chaîne de caractères (`EnumType.STRING`).
-- `@JsonSerialize(using = JsonDataSerializer.class)` : formate les dates au format `dd-MM-yyyy` comme dans le projet existant.
 
 ---
 
@@ -159,7 +160,7 @@ public class ReservationRequestDTO {
 public class ReservationResponseDTO {
     private Integer id;
     private Integer livreId;
-    private String livreNom;
+    private String livreTitre;
     private Integer adherentId;
     private String adherentNom;
     private Date dateReservation;
@@ -168,7 +169,22 @@ public class ReservationResponseDTO {
 }
 ```
 
-**Explication** : L'entité `Reservation` ne sort jamais du service. Ce DTO expose les informations utiles au client, y compris les noms du livre et de l'adhérent pour une meilleure lisibilité.
+**Explication** : L'entité `Reservation` ne sort jamais du service. Ce DTO expose les informations utiles au client. Le champ `livreTitre` est utilisé conformément aux exigences de la collection Postman.
+
+### 5.3 DTO d'erreur `ErrorResponseDTO`
+
+**Fichier** : `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/dto/ErrorResponseDTO.java`
+
+```java
+@Data
+@AllArgsConstructor
+public class ErrorResponseDTO {
+    private String regle;
+    private String message;
+}
+```
+
+**Explication** : Ce DTO standardise les réponses d'erreur. Le champ `regle` identifie la règle de gestion enfreinte (RG-01, RG-02, etc.) et `message` explique l'erreur.
 
 ---
 
@@ -179,30 +195,54 @@ public class ReservationResponseDTO {
 **Fichier** : `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/exceptions/BusinessRuleViolationException.java`
 
 ```java
+@Getter
 @ResponseStatus(value = HttpStatus.CONFLICT)
 public class BusinessRuleViolationException extends RuntimeException {
-    public BusinessRuleViolationException(String message) {
+    private final String regle;
+    public BusinessRuleViolationException(String regle, String message) {
         super(message);
+        this.regle = regle;
     }
 }
 ```
 
-**Explication** : Cette exception est levée lorsqu'une règle de gestion (RG-01, RG-02, RG-03, RG-05, RG-06) est violée. Elle renvoie un code HTTP **409** avec un message qui nomme la règle enfreinte.
+**Explication** : Cette exception est levée lorsqu'une règle de gestion (RG-01, RG-02, RG-03, RG-05, RG-06) est violée. Elle renvoie un code HTTP **409** avec le code de la règle (`regle`) et un message explicatif.
 
 ### 6.2 `InvalidRequestException` (400 Bad Request)
 
 **Fichier** : `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/exceptions/InvalidRequestException.java`
 
 ```java
+@Getter
 @ResponseStatus(value = HttpStatus.BAD_REQUEST)
 public class InvalidRequestException extends RuntimeException {
+    private final String regle;
     public InvalidRequestException(String message) {
         super(message);
+        this.regle = null;
     }
 }
 ```
 
-**Explication** : Cette exception est levée lorsqu'une requête est invalide (par exemple, `livreId` ou `adherentId` manquant). Elle renvoie un code HTTP **400** avec un message qui indique quel champ manque.
+**Explication** : Cette exception est levée lorsqu'une requête est invalide (par exemple, `livreId` ou `adherentId` manquant). Elle renvoie un code HTTP **400**.
+
+### 6.3 `GlobalExceptionHandler` (Handler global)
+
+**Fichier** : `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/exceptions/GlobalExceptionHandler.java`
+
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+    @ExceptionHandler(BusinessRuleViolationException.class)
+    public ResponseEntity<ErrorResponseDTO> handleBusinessRuleViolation(BusinessRuleViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponseDTO(ex.getRegle(), ex.getMessage()));
+    }
+    // ... autres handlers
+}
+```
+
+**Explication** : Ce handler centralise la gestion des erreurs et formate les réponses avec `regle` et `message`. Il gère aussi les erreurs de type mismatch (statut invalide → 400) et les corps de requête illisibles.
 
 ---
 
@@ -216,12 +256,12 @@ Cette méthode implémente les règles de gestion **RG-01, RG-02, RG-03, RG-04**
 
 ```java
 public ReservationResponseDTO creerReservation(ReservationRequestDTO request) {
-    // Validation des champs obligatoires
-    if (request.getLivreId() == null) {
-        throw new InvalidRequestException("Le champ 'livreId' est obligatoire.");
-    }
-    if (request.getAdherentId() == null) {
-        throw new InvalidRequestException("Le champ 'adherentId' est obligatoire.");
+    // Validation des champs obligatoires : on liste TOUS les champs manquants
+    List<String> manquants = new ArrayList<>();
+    if (request.getLivreId() == null) manquants.add("livreId");
+    if (request.getAdherentId() == null) manquants.add("adherentId");
+    if (!manquants.isEmpty()) {
+        throw new InvalidRequestException("Champ(s) obligatoire(s) manquant(s) : " + String.join(", ", manquants) + ".");
     }
 
     // Vérification de l'existence du livre
@@ -230,11 +270,11 @@ public ReservationResponseDTO creerReservation(ReservationRequestDTO request) {
 
     // Vérification de l'existence de l'adhérent
     Users adherent = usersRepository.findById(request.getAdherentId())
-            .orElseThrow(() -> new NotFoundException("Adhérent avec l'id " + request.getAdherentId() + " introuvable."));
+            .orElseThrow(() -> new NotFoundException("Adherent avec l'id " + request.getAdherentId() + " introuvable."));
 
     // RG-01 : On ne peut réserver qu'un livre indisponible
     if (livre.getNoOfCopies() > 0) {
-        throw new BusinessRuleViolationException(
+        throw new BusinessRuleViolationException("RG-01",
                 "RG-01 : Le livre \"" + livre.getBookName() + "\" est disponible, il ne peut pas être réservé.");
     }
 
@@ -244,16 +284,17 @@ public ReservationResponseDTO creerReservation(ReservationRequestDTO request) {
     boolean dejaReserve = reservationsActivesSurLivre.stream()
             .anyMatch(r -> r.getAdherent().getUserId().equals(adherent.getUserId()));
     if (dejaReserve) {
-        throw new BusinessRuleViolationException(
-                "RG-02 : L'adhérent \"" + adherent.getName() + "\" a déjà une réservation active sur le livre \"" + livre.getBookName() + "\".");
+        throw new BusinessRuleViolationException("RG-02",
+                "RG-02 : L'adherent \"" + adherent.getName() + "\" a déjà une réservation active sur le livre \"" + livre.getBookName() + "\".");
     }
 
     // RG-03 : Un adhérent ne peut pas dépasser 3 réservations actives simultanées
     List<Reservation> reservationsActivesAdherent = reservationRepository
             .findByAdherent_UserIdAndStatutIn(adherent.getUserId(), STATUTS_ACTIFS);
     if (reservationsActivesAdherent.size() >= 3) {
-        throw new BusinessRuleViolationException(
-                "RG-03 : L'adhérent \"" + adherent.getName() + "\" a déjà atteint la limite de 3 réservations actives.");
+        throw new BusinessRuleViolationException("RG-03",
+                "RG-03 : L'adherent \"" + adherent.getName() + "\" a déjà " + reservationsActivesAdherent.size()
+                        + " réservations actives, le maximum autorisé est de 3.");
     }
 
     // RG-04 : dateReservation = maintenant, dateExpiration = dateReservation + 7 jours
@@ -287,18 +328,19 @@ Cette méthode implémente les règles de gestion **RG-05 et RG-06** :
 ```java
 public ReservationResponseDTO annulerReservation(Integer id) {
     Reservation reservation = reservationRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Réservation avec l'id " + id + " introuvable."));
+            .orElseThrow(() -> new NotFoundException("Reservation avec l'id " + id + " introuvable."));
 
     // RG-06 : Une réservation ANNULEE, EXPIREE ou HONOREE ne peut plus changer d'état
     if (STATUTS_TERMINAUX.contains(reservation.getStatut())) {
-        throw new BusinessRuleViolationException(
-                "RG-06 : Une réservation avec le statut " + reservation.getStatut() + " ne peut plus changer d'état.");
+        throw new BusinessRuleViolationException("RG-05",
+                "RG-05 : Une reservation ne peut être annulée que si son statut est EN_ATTENTE ou DISPONIBLE. "
+                        + "RG-06 : Le statut " + reservation.getStatut() + " est terminal, il ne peut plus changer d'état.");
     }
 
     // RG-05 : Une réservation ne peut être annulée que si son statut est EN_ATTENTE ou DISPONIBLE
     if (!STATUTS_ACTIFS.contains(reservation.getStatut())) {
-        throw new BusinessRuleViolationException(
-                "RG-05 : Une réservation ne peut être annulée que si son statut est EN_ATTENTE ou DISPONIBLE.");
+        throw new BusinessRuleViolationException("RG-05",
+                "RG-05 : Une reservation ne peut être annulée que si son statut est EN_ATTENTE ou DISPONIBLE.");
     }
 
     reservation.setStatut(StatutReservation.ANNULEE);
@@ -367,12 +409,7 @@ public class ReservationController {
 **Explication** :
 - Le contrôleur ne contient **aucune logique métier** — il délègue tout au service.
 - Chaque endpoint est annoté avec `@Operation` et `@ApiResponses` pour la documentation Swagger.
-- Les codes de retour sont conformes au cahier des charges :
-  - POST → 201 (créé), 400 (requête invalide), 404 (introuvable), 409 (règle violée)
-  - GET → 200
-  - GET/{id} → 200, 404
-  - PATCH/{id}/annuler → 200, 404, 409
-  - DELETE/{id} → 204, 404
+- Les codes de retour sont conformes au cahier des charges.
 
 ---
 
@@ -388,39 +425,27 @@ public class ReservationController {
 
 ---
 
-## Étape 10 : Compilation et vérification
+## Étape 10 : Création des fixtures SQL
 
-La compilation du projet a été effectuée avec succès :
+**Fichier** : `bibliotheque-backend/src/main/resources/fixtures-reservation.sql`
 
-```
-mvn -f bibliotheque-backend/pom.xml clean compile
-```
+Ce fichier contient les données de test conformes aux exigences de la collection Postman :
 
-Résultat : **BUILD SUCCESS** — 31 fichiers source compilés sans erreur.
+| Réf. | Donnée | État exigé |
+|---|---|---|
+| L1 (201) | Un livre | Disponible — 3 exemplaires, aucun emprunt en cours |
+| L2 (202), L3 (203), L4 (204), L5 (205) | Quatre livres | Tous empruntés et non rendus — 0 exemplaire |
+| A1 (301) | Un adhérent | Réservataire principal (`a1_reservataire`) |
+| A2 (302) | Un adhérent | Celui qui saturera son quota (`a2_quota`) |
+| A3 (303) | Un adhérent | L'emprunteur : il détient L2 à L5 (`a3_emprunteur`) |
 
----
-
-## Étape 11 : Création de la branche et commit
-
-### 11.1 Création de la branche
-
-```bash
-git checkout -b feature/reservation-benthe-diallo
-```
-
-### 11.2 Commit
-
-```bash
-git commit -m "feat: ajout du module Réservation (entité, repository, service, contrôleur, DTO, règles de gestion RG-01 à RG-06)"
-```
-
-Résultat : **10 fichiers modifiés, 395 insertions, 1 suppression**.
+Mot de passe des trois adhérents : `admin123`
 
 ---
 
-## Étape 12 : Dockerisation du projet
+## Étape 11 : Dockerisation du projet
 
-### 12.1 Dockerfile backend
+### 11.1 Dockerfile backend
 
 **Fichier** : `bibliotheque-backend/Dockerfile`
 
@@ -441,11 +466,7 @@ EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
-**Explication** : Build en 2 étapes (multi-stage) :
-1. **Build** : utilise Maven pour compiler et empaqueter l'application en JAR.
-2. **Run** : utilise une image JRE légère (Alpine) pour exécuter le JAR.
-
-### 12.2 Dockerfile frontend
+### 11.2 Dockerfile frontend
 
 **Fichier** : `bibliotheque-frontend/Dockerfile`
 
@@ -466,46 +487,11 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 ```
 
-**Explication** : Build en 2 étapes :
-1. **Build** : utilise Node.js pour installer les dépendances et compiler l'application Angular en production.
-2. **Run** : utilise Nginx pour servir les fichiers statiques et faire le proxy vers le backend.
-
-### 12.3 Configuration Nginx
-
-**Fichier** : `bibliotheque-frontend/nginx.conf`
-
-```nginx
-server {
-    listen 80;
-    server_name localhost;
-    root /usr/share/nginx/html;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api/ {
-        proxy_pass http://backend:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-**Explication** :
-- `location /` : sert l'application Angular (SPA) avec fallback sur `index.html` pour le routing.
-- `location /api/` : redirige les requêtes API vers le conteneur backend via le réseau Docker.
-
-### 12.4 Docker Compose
+### 11.3 Docker Compose
 
 **Fichier** : `docker-compose.yml`
 
 ```yaml
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
@@ -553,45 +539,34 @@ volumes:
   postgres_data:
 ```
 
-**Explication** :
-- **db** : conteneur PostgreSQL avec volume persistant et healthcheck.
-- **backend** : conteneur Spring Boot connecté à la base via le réseau Docker (`db:5432`).
-- **frontend** : conteneur Nginx servant l'application Angular sur le port 4200.
+---
 
-### 12.5 Fichiers `.dockerignore`
+## Étape 12 : Tests effectués
 
-**Fichiers** : `bibliotheque-backend/.dockerignore` et `bibliotheque-frontend/.dockerignore`
+### 12.1 Tests manuels avec curl
 
-Ces fichiers excluent les dossiers inutiles (`target/`, `node_modules/`, `dist/`, `.git/`) du contexte de build Docker, ce qui accélère considérablement le build.
+| Test | Requête | Résultat attendu | Résultat obtenu |
+|---|---|---|---|
+| RG-01 | POST /api/reservations (L1=201, A1=301) | 409 + regle=RG-01 | ✅ `{"regle":"RG-01","message":"RG-01 : Le livre \"L1 - Le livre disponible\" est disponible..."}` |
+| Nominal | POST /api/reservations (L2=202, A1=301) | 201 + statut=EN_ATTENTE | ✅ `{"id":5,"livreId":202,"livreTitre":"L2 - Le livre emprunte 1",...}` |
+| RG-02 | POST /api/reservations (L2=202, A1=301) | 409 + regle=RG-02 | ✅ `{"regle":"RG-02","message":"RG-02 : L'adherent \"A1 Reservataire\" a déjà une réservation active..."}` |
+| RG-03 | POST /api/reservations (L5=205, A2=302) après 3 réservations | 409 + regle=RG-03 | ✅ `{"regle":"RG-03","message":"RG-03 : L'adherent \"A2 Quota\" a déjà 3 réservations actives, le maximum autorisé est de 3."}` |
+| RG-05 | PATCH /api/reservations/8/annuler | 200 + statut=ANNULEE | ✅ `{"id":8,...,"statut":"ANNULEE"}` |
+| RG-06 | PATCH /api/reservations/8/annuler (2e fois) | 409 + regle=RG-05 + message RG-06 | ✅ `{"regle":"RG-05","message":"RG-05 : Une reservation ne peut être annulée... RG-06 : Le statut ANNULEE est terminal..."}` |
+| 400 | POST /api/reservations (corps vide) | 400 + les 2 champs nommés | ✅ `{"regle":null,"message":"Champ(s) obligatoire(s) manquant(s) : livreId, adherentId."}` |
+| 404 | POST /api/reservations (livre=999999) | 404 | ✅ `{"regle":null,"message":"Livre avec l'id 999999 introuvable."}` |
+| 400 | GET /api/reservations?statut=PEUT_ETRE | 400 + valeurs acceptées | ✅ `{"regle":null,"message":"La valeur 'PEUT_ETRE' n'est pas valide pour le parametre 'statut'. Valeurs acceptees : EN_ATTENTE, DISPONIBLE, ANNULEE, EXPIREE, HONOREE."}` |
 
-### 12.6 Variables d'environnement
+### 12.2 Tests avec la collection Postman
 
-**Fichier** : `bibliotheque-backend/src/main/resources/application.properties`
-
-```properties
-spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bibliotheque}
-spring.datasource.username=${SPRING_DATASOURCE_USERNAME:postgres}
-spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:Benthe@2001}
-```
-
-**Explication** : Les variables d'environnement permettent au backend de se connecter à la base de données Docker (`db:5432`) en production, tout en conservant les valeurs par défaut pour le développement local (`localhost:5432`).
-
-### 12.7 Test de la dockerisation
-
-Les conteneurs ont été démarrés avec succès :
-
-```
-docker compose up -d --build
-```
-
-Résultats des tests :
-
-| Service | URL | Code HTTP |
-|---|---|---|
-| Backend API | `http://localhost:8080/api/reservations` | 200 |
-| Frontend | `http://localhost:4200` | 200 |
-| Swagger UI | `http://localhost:8080/swagger-ui/index.html` | 200 |
-| Proxy Nginx → Backend | `http://localhost:4200/api/reservations` | 200 |
+La collection `bibliotheque-reservation.postman_collection.json` est prête à être importée dans Postman et exécutée avec le Collection Runner. Elle couvre :
+- **0 - Authentification** : récupération des jetons admin et adhérent
+- **1 - Jeu de données** : affichage de L1-L5, A1-A3 et des emprunts
+- **2 - Parcours nominal** : créer, consulter, lister, filtrer, annuler
+- **3 - Règles de gestion** : RG-01 à RG-06, chacune déclenchée volontairement
+- **4 - Validation et 404** : champs manquants, ressources absentes
+- **5 - Sécurité** : 401 sans jeton, 403 sans le rôle
+- **6 - Nettoyage** : remise à zéro
 
 ---
 
@@ -599,10 +574,10 @@ Résultats des tests :
 
 | Réf. | Règle | Implémentation |
 |---|---|---|
-| **RG-01** | On ne peut réserver qu'un livre indisponible | Dans `ReservationService.creerReservation()` — vérifie `livre.getNoOfCopies() > 0` et lève `BusinessRuleViolationException` avec le message "RG-01 : ..." |
-| **RG-02** | Un adhérent ne peut avoir qu'une seule réservation active sur un même livre | Dans `ReservationService.creerReservation()` — vérifie via `findByLivre_BookIdAndStatutIn` si une réservation active existe déjà pour ce livre et cet adhérent |
-| **RG-03** | Un adhérent ne peut pas dépasser 3 réservations actives simultanées | Dans `ReservationService.creerReservation()` — vérifie via `findByAdherent_UserIdAndStatutIn` que le nombre de réservations actives est < 3 |
-| **RG-04** | dateExpiration = dateReservation + 7 jours | Dans `ReservationService.creerReservation()` — utilise `Calendar` pour ajouter 7 jours à la date de réservation |
+| **RG-01** | On ne peut réserver qu'un livre indisponible | Dans `ReservationService.creerReservation()` — vérifie `livre.getNoOfCopies() > 0` et lève `BusinessRuleViolationException("RG-01", ...)` |
+| **RG-02** | Un adhérent ne peut avoir qu'une seule réservation active sur un même livre | Dans `ReservationService.creerReservation()` — vérifie via `findByLivre_BookIdAndStatutIn` si une réservation active existe déjà |
+| **RG-03** | Un adhérent ne peut pas dépasser 3 réservations actives simultanées | Dans `ReservationService.creerReservation()` — vérifie via `findByAdherent_UserIdAndStatutIn` que le nombre est < 3 |
+| **RG-04** | dateExpiration = dateReservation + 7 jours | Dans `ReservationService.creerReservation()` — utilise `Calendar.add(Calendar.DATE, 7)` |
 | **RG-05** | Une réservation ne peut être annulée que si son statut est EN_ATTENTE ou DISPONIBLE | Dans `ReservationService.annulerReservation()` — vérifie que le statut est dans `STATUTS_ACTIFS` |
 | **RG-06** | Une réservation ANNULEE, EXPIREE ou HONOREE ne peut plus changer d'état | Dans `ReservationService.annulerReservation()` — vérifie que le statut n'est pas dans `STATUTS_TERMINAUX` |
 
@@ -613,7 +588,7 @@ Résultats des tests :
 | Verbe | Chemin | Rôle | Succès | Erreurs |
 |---|---|---|---|---|
 | POST | `/api/reservations` | Créer une réservation | 201 | 400, 404, 409 |
-| GET | `/api/reservations` | Lister, filtrable par statut et par adhérent | 200 | — |
+| GET | `/api/reservations` | Lister, filtrable par statut et par adhérent | 200 | 400 (statut invalide) |
 | GET | `/api/reservations/{id}` | Consulter | 200 | 404 |
 | PATCH | `/api/reservations/{id}/annuler` | Annuler | 200 | 404, 409 |
 | DELETE | `/api/reservations/{id}` | Supprimer | 204 | 404 |
@@ -622,17 +597,20 @@ Résultats des tests :
 
 ## Fichiers créés/modifiés
 
-### Fichiers créés (9) — Module Réservation
+### Fichiers créés (12) — Module Réservation
 
 1. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/entity/StatutReservation.java`
 2. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/entity/Reservation.java`
 3. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/dao/ReservationRepository.java`
 4. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/dto/ReservationRequestDTO.java`
 5. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/dto/ReservationResponseDTO.java`
-6. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/exceptions/BusinessRuleViolationException.java`
-7. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/exceptions/InvalidRequestException.java`
-8. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/service/ReservationService.java`
-9. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/controller/ReservationController.java`
+6. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/dto/ErrorResponseDTO.java`
+7. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/exceptions/BusinessRuleViolationException.java`
+8. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/exceptions/InvalidRequestException.java`
+9. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/exceptions/GlobalExceptionHandler.java`
+10. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/service/ReservationService.java`
+11. `bibliotheque-backend/src/main/java/com/ibizabroker/bibliotheque/controller/ReservationController.java`
+12. `bibliotheque-backend/src/main/resources/fixtures-reservation.sql`
 
 ### Fichiers créés (6) — Dockerisation
 
