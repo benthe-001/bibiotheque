@@ -17,6 +17,17 @@
     <button class="btn btn-primary" (click)="chargerDonnees()">Réessayer</button>
   </div>
 
+  <!-- ===== FILTRE PAR STATUT (visible dans tous les états sauf chargement/erreur) ===== -->
+  <div *ngIf="etat === 'DONNEES' || etat === 'VIDE'" class="mb-3">
+    <label for="filtreStatut" class="form-label">Filtrer par statut :</label>
+    <select id="filtreStatut" class="form-select" style="max-width: 300px;"
+            name="filtreStatut"
+            [ngModel]="filtreStatut" (ngModelChange)="filtrerParStatut($event)">
+      <option value="TOUS">Tous</option>
+      <option *ngFor="let statut of statuts" [value]="statut">{{ statut }}</option>
+    </select>
+  </div>
+
   <!-- ===== ÉTAT : LISTE VIDE ===== -->
   <div *ngIf="etat === 'VIDE'" class="alert alert-info my-5" role="alert">
     <h4 class="alert-heading">Aucune réservation</h4>
@@ -25,16 +36,6 @@
 
   <!-- ===== ÉTAT : DONNEES ===== -->
   <div *ngIf="etat === 'DONNEES'">
-
-    <!-- Filtre par statut -->
-    <div class="mb-3">
-      <label for="filtreStatut" class="form-label">Filtrer par statut :</label>
-      <select id="filtreStatut" class="form-select" style="max-width: 300px;"
-              [ngModel]="filtreStatut" (ngModelChange)="filtrerParStatut($event)">
-        <option value="TOUS">Tous</option>
-        <option *ngFor="let statut of statuts" [value]="statut">{{ statut }}</option>
-      </select>
-    </div>
 
     <!-- Messages de succès / erreur -->
     <div *ngIf="messageSucces" class="alert alert-success" role="alert">{{ messageSucces }}</div>

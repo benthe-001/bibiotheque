@@ -19,7 +19,7 @@
           <select id="livre" class="form-select" [(ngModel)]="livreId" name="livreId">
             <option [ngValue]="null" disabled>-- Choisir un livre --</option>
             <option *ngFor="let livre of livres" [ngValue]="livre.bookId">
-              {{ livre.bookName }} ({{ livre.noOfCopies }} exemplaire{{ livre.noOfCopies > 1 ? 's' : '' }})
+              {{ livre.bookName }} — {{ livre.bookAuthor }} ({{ livre.noOfCopies }} exemplaire{{ livre.noOfCopies > 1 ? 's' : '' }})
             </option>
           </select>
         </div>
