@@ -1,5 +1,10 @@
 table {
   margin-bottom: 0;
+  color: #212529 !important;
+}
+
+th, td {
+  color: #212529 !important;
 }
 
 .badge {
