@@ -9,7 +9,7 @@ import java.util.Date;
 public class ReservationResponseDTO {
     private Integer id;
     private Integer livreId;
-    private String livreNom;
+    private String livreTitre;
     private Integer adherentId;
     private String adherentNom;
     private Date dateReservation;

@@ -15,6 +15,7 @@ import com.ibizabroker.bibliotheque.exceptions.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -47,12 +48,16 @@ public class ReservationService {
      * RG-04 : dateExpiration = dateReservation + 7 jours.
      */
     public ReservationResponseDTO creerReservation(ReservationRequestDTO request) {
-        // Validation des champs obligatoires
+        // Validation des champs obligatoires : on liste TOUS les champs manquants
+        List<String> manquants = new ArrayList<>();
         if (request.getLivreId() == null) {
-            throw new InvalidRequestException("Le champ 'livreId' est obligatoire.");
+            manquants.add("livreId");
         }
         if (request.getAdherentId() == null) {
-            throw new InvalidRequestException("Le champ 'adherentId' est obligatoire.");
+            manquants.add("adherentId");
+        }
+        if (!manquants.isEmpty()) {
+            throw new InvalidRequestException("Champ(s) obligatoire(s) manquant(s) : " + String.join(", ", manquants) + ".");
         }
 
         // Vérification de l'existence du livre
@@ -61,11 +66,11 @@ public class ReservationService {
 
         // Vérification de l'existence de l'adhérent
         Users adherent = usersRepository.findById(request.getAdherentId())
-                .orElseThrow(() -> new NotFoundException("Adhérent avec l'id " + request.getAdherentId() + " introuvable."));
+                .orElseThrow(() -> new NotFoundException("Adherent avec l'id " + request.getAdherentId() + " introuvable."));
 
         // RG-01 : On ne peut réserver qu'un livre indisponible
         if (livre.getNoOfCopies() > 0) {
-            throw new BusinessRuleViolationException(
+            throw new BusinessRuleViolationException("RG-01",
                     "RG-01 : Le livre \"" + livre.getBookName() + "\" est disponible, il ne peut pas être réservé.");
         }
 
@@ -75,16 +80,17 @@ public class ReservationService {
         boolean dejaReserve = reservationsActivesSurLivre.stream()
                 .anyMatch(r -> r.getAdherent().getUserId().equals(adherent.getUserId()));
         if (dejaReserve) {
-            throw new BusinessRuleViolationException(
-                    "RG-02 : L'adhérent \"" + adherent.getName() + "\" a déjà une réservation active sur le livre \"" + livre.getBookName() + "\".");
+            throw new BusinessRuleViolationException("RG-02",
+                    "RG-02 : L'adherent \"" + adherent.getName() + "\" a déjà une réservation active sur le livre \"" + livre.getBookName() + "\".");
         }
 
         // RG-03 : Un adhérent ne peut pas dépasser 3 réservations actives simultanées
         List<Reservation> reservationsActivesAdherent = reservationRepository
                 .findByAdherent_UserIdAndStatutIn(adherent.getUserId(), STATUTS_ACTIFS);
         if (reservationsActivesAdherent.size() >= 3) {
-            throw new BusinessRuleViolationException(
-                    "RG-03 : L'adhérent \"" + adherent.getName() + "\" a déjà atteint la limite de 3 réservations actives.");
+            throw new BusinessRuleViolationException("RG-03",
+                    "RG-03 : L'adherent \"" + adherent.getName() + "\" a déjà " + reservationsActivesAdherent.size()
+                            + " réservations actives, le maximum autorisé est de 3.");
         }
 
         // Création de la réservation
@@ -135,7 +141,7 @@ public class ReservationService {
      */
     public ReservationResponseDTO consulterReservation(Integer id) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Réservation avec l'id " + id + " introuvable."));
+                .orElseThrow(() -> new NotFoundException("Reservation avec l'id " + id + " introuvable."));
         return toResponseDTO(reservation);
     }
 
@@ -146,18 +152,19 @@ public class ReservationService {
      */
     public ReservationResponseDTO annulerReservation(Integer id) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Réservation avec l'id " + id + " introuvable."));
+                .orElseThrow(() -> new NotFoundException("Reservation avec l'id " + id + " introuvable."));
 
         // RG-06 : Une réservation ANNULEE, EXPIREE ou HONOREE ne peut plus changer d'état
         if (STATUTS_TERMINAUX.contains(reservation.getStatut())) {
-            throw new BusinessRuleViolationException(
-                    "RG-06 : Une réservation avec le statut " + reservation.getStatut() + " ne peut plus changer d'état.");
+            throw new BusinessRuleViolationException("RG-05",
+                    "RG-05 : Une reservation ne peut être annulée que si son statut est EN_ATTENTE ou DISPONIBLE. "
+                            + "RG-06 : Le statut " + reservation.getStatut() + " est terminal, il ne peut plus changer d'état.");
         }
 
         // RG-05 : Une réservation ne peut être annulée que si son statut est EN_ATTENTE ou DISPONIBLE
         if (!STATUTS_ACTIFS.contains(reservation.getStatut())) {
-            throw new BusinessRuleViolationException(
-                    "RG-05 : Une réservation ne peut être annulée que si son statut est EN_ATTENTE ou DISPONIBLE.");
+            throw new BusinessRuleViolationException("RG-05",
+                    "RG-05 : Une reservation ne peut être annulée que si son statut est EN_ATTENTE ou DISPONIBLE.");
         }
 
         reservation.setStatut(StatutReservation.ANNULEE);
@@ -170,7 +177,7 @@ public class ReservationService {
      */
     public void supprimerReservation(Integer id) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Réservation avec l'id " + id + " introuvable."));
+                .orElseThrow(() -> new NotFoundException("Reservation avec l'id " + id + " introuvable."));
         reservationRepository.delete(reservation);
     }
 
@@ -181,7 +188,7 @@ public class ReservationService {
         ReservationResponseDTO dto = new ReservationResponseDTO();
         dto.setId(reservation.getId());
         dto.setLivreId(reservation.getLivre().getBookId());
-        dto.setLivreNom(reservation.getLivre().getBookName());
+        dto.setLivreTitre(reservation.getLivre().getBookName());
         dto.setAdherentId(reservation.getAdherent().getUserId());
         dto.setAdherentNom(reservation.getAdherent().getName());
         dto.setDateReservation(reservation.getDateReservation());
