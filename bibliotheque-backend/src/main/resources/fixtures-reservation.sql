@@ -47,3 +47,32 @@ INSERT INTO borrow (borrow_id, book_id, user_id, issue_date, return_date, due_da
 (403, 204, 303, NOW() - INTERVAL '6 days',  NULL, NOW() + INTERVAL '1 days'),
 (404, 205, 303, NOW() - INTERVAL '4 days',  NULL, NOW() + INTERVAL '3 days')
 ON CONFLICT (borrow_id) DO NOTHING;
+
+-- ---------- RÉSERVATIONS - Données de test pour tous les statuts ----------
+-- ID 501-505 : Réservations avec différents statuts
+-- RG-04 indique que dateExpiration = dateReservation + 7 jours
+
+-- Réservation EN_ATTENTE (statut actif, réservé aujourd'hui)
+INSERT INTO reservation (reservation_id, book_id, user_id, date_reservation, date_expiration, statut) VALUES
+(501, 202, 301, NOW() - INTERVAL '2 days', NOW() + INTERVAL '5 days', 'EN_ATTENTE')
+ON CONFLICT (reservation_id) DO NOTHING;
+
+-- Réservation DISPONIBLE (livre rendu, exemplaire disponible pour le réservataire)
+INSERT INTO reservation (reservation_id, book_id, user_id, date_reservation, date_expiration, statut) VALUES
+(502, 203, 302, NOW() - INTERVAL '3 days', NOW() + INTERVAL '4 days', 'DISPONIBLE')
+ON CONFLICT (reservation_id) DO NOTHING;
+
+-- Réservation ANNULEA (annulée par l'utilisateur avant expiration)
+INSERT INTO reservation (reservation_id, book_id, user_id, date_reservation, date_expiration, statut) VALUES
+(503, 204, 301, NOW() - INTERVAL '5 days', NOW() - INTERVAL '2 days', 'ANNULEA')
+ON CONFLICT (reservation_id) DO NOTHING;
+
+-- Réservation EXPIREE (date de réservation dépassée, jamais honorée)
+INSERT INTO reservation (reservation_id, book_id, user_id, date_reservation, date_expiration, statut) VALUES
+(504, 205, 302, NOW() - INTERVAL '10 days', NOW() - INTERVAL '3 days', 'EXPIREE')
+ON CONFLICT (reservation_id) DO NOTHING;
+
+-- Réservation HONOREE (réservation terminée avec succès, livre fourni)
+INSERT INTO reservation (reservation_id, book_id, user_id, date_reservation, date_expiration, statut) VALUES
+(505, 202, 302, NOW() - INTERVAL '8 days', NOW() - INTERVAL '1 days', 'HONOREE')
+ON CONFLICT (reservation_id) DO NOTHING;
