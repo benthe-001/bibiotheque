@@ -67,7 +67,7 @@ export class ReservationsComponent implements OnInit {
     });
 
     this.usersService.getUsersList().subscribe({
-      next: (data) => this.adherents = data,
+      next: (data) => this.adherents = data.filter(user => this.estAdherent(user)),
       error: () => this.adherents = []
     });
   }
@@ -103,7 +103,7 @@ export class ReservationsComponent implements OnInit {
       },
       error: (err) => {
         this.formulaireEnCours = false;
-        this.messageErreur = this.extraireMessageErreur(err, 'Une erreur est survenue lors de la création de la réservation.');
+        this.messageErreur = this.extraireMessageErreur(err, 'La réservation n’a pas pu être créée.');
       }
     });
   }
@@ -144,15 +144,51 @@ export class ReservationsComponent implements OnInit {
     return statut === 'EN_ATTENTE' || statut === 'DISPONIBLE';
   }
 
+  private estAdherent(user: Users): boolean {
+    const roles = Array.isArray(user.role) ? user.role : [user.role];
+    return roles.some(role => role && role.roleName === 'User');
+  }
+
   private extraireMessageErreur(err: any, defaut: string): string {
     if (err.status === 0) {
       return 'Le serveur est injoignable. Vérifiez que le backend est démarré, puis réessayez.';
     }
-    if (err.error && err.error.message) {
-      return err.error.message;
+    let payload = err.error || {};
+    if (typeof payload === 'string') {
+      try {
+        payload = JSON.parse(payload);
+      } catch {
+        payload = {};
+      }
     }
-    if (err.error && typeof err.error === 'string') {
-      return err.error;
+    if (payload && typeof payload.error === 'string') {
+      try {
+        payload = JSON.parse(payload.error);
+      } catch {
+        payload = {};
+      }
+    }
+    const regle = payload && typeof payload.regle === 'string'
+      ? payload.regle.toUpperCase()
+      : '';
+    const messagesParRegle: { [regle: string]: string } = {
+      'RG-01': 'Impossible de réserver ce livre : il est disponible.',
+      'RG-02': 'Impossible de réserver ce livre une deuxième fois : cet livre possède déjà une réservation active.',
+      'RG-03': 'Impossible de réserver : cet adhérent a atteint le quota de 3 réservations actives.',
+      'RG-05': 'Cette réservation ne peut pas être annulée dans son état actuel.',
+      'RG-06': 'Cette réservation est terminée et ne peut plus changer d’état.'
+    };
+    if (messagesParRegle[regle]) {
+      return messagesParRegle[regle];
+    }
+    if (err.status >= 500) {
+      return 'La réservation ne peut pas être traitée pour le moment. Réessayez plus tard.';
+    }
+    if (err.status === 404) {
+      return 'Le livre ou l’adhérent sélectionné est introuvable.';
+    }
+    if (err.status === 400) {
+      return 'Sélectionnez un livre et un adhérent valides avant de réserver.';
     }
     return defaut;
   }

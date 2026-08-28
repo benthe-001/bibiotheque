@@ -9,7 +9,7 @@
 
     <!-- Message d'erreur métier (409, 400, 404) -->
     <div *ngIf="messageErreur" class="alert alert-danger" role="alert">
-      <strong>Refus :</strong> {{ messageErreur }}
+      {{ messageErreur }}
     </div>
 
     <form (ngSubmit)="soumettreFormulaire()">
@@ -18,9 +18,11 @@
           <label for="livre" class="form-label">Livre</label>
           <select id="livre" class="form-select" [(ngModel)]="livreId" name="livreId">
             <option [ngValue]="null" disabled>-- Sélectionner un livre --</option>
-            <option *ngFor="let livre of livres" [ngValue]="livre.bookId">
-              {{ livre.bookName }} — {{ livre.bookAuthor }} ({{ livre.noOfCopies }} exemplaire{{ livre.noOfCopies !== 1 ? 's' : '' }})
-            </option>
+            <ng-container *ngFor="let livre of livres">
+              <option [ngValue]="livre.bookId">
+                {{ livre.bookName }} — {{ livre.bookAuthor }} ({{ livre.noOfCopies }} exemplaire{{ livre.noOfCopies !== 1 ? 's' : '' }})
+              </option>
+            </ng-container>
           </select>
         </div>
 

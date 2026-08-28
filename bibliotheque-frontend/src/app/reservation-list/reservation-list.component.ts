@@ -12,10 +12,19 @@ export class ReservationListComponent {
   @Input() annulationEnCours: number | null = null;
   @Output() annuler = new EventEmitter<number>();
 
+  reservationAConfirmer: number | null = null;
+
   confirmerAnnulation(id: number): void {
-    if (confirm('Voulez-vous vraiment annuler cette réservation ?')) {
-      this.annuler.emit(id);
-    }
+    this.reservationAConfirmer = id;
+  }
+
+  validerAnnulation(id: number): void {
+    this.reservationAConfirmer = null;
+    this.annuler.emit(id);
+  }
+
+  abandonnerAnnulation(): void {
+    this.reservationAConfirmer = null;
   }
 
   formaterDate(date: string): string {

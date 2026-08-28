@@ -19,7 +19,7 @@ INSERT INTO books (book_id, book_name, book_author, book_genre, no_of_copies) VA
 ON CONFLICT (book_id) DO NOTHING;
 
 -- ---------- ROLES ----------
--- S'assure que le rôle User existe (id 2)
+-- S'assure que les rôles de base existent.
 INSERT INTO role (role_id, role_name) VALUES
 (1, 'Admin'),
 (2, 'User')
@@ -34,10 +34,11 @@ INSERT INTO users (user_id, username, name, password) VALUES
 ON CONFLICT (user_id) DO NOTHING;
 
 -- ---------- LIAISON USER_ROLE ----------
-INSERT INTO user_role (user_id, role_id) VALUES
-(301, 2),
-(302, 2),
-(303, 2)
+DELETE FROM user_role WHERE user_id IN (301, 302, 303);
+INSERT INTO user_role (user_id, role_id)
+SELECT user_id, (SELECT role_id FROM role WHERE role_name = 'User' ORDER BY role_id LIMIT 1)
+FROM users
+WHERE user_id IN (301, 302, 303)
 ON CONFLICT DO NOTHING;
 
 -- ---------- EMPRUNTS (A3 détient L2 à L5, non rendus) ----------
@@ -49,30 +50,11 @@ INSERT INTO borrow (borrow_id, book_id, user_id, issue_date, return_date, due_da
 ON CONFLICT (borrow_id) DO NOTHING;
 
 -- ---------- RÉSERVATIONS - Données de test pour tous les statuts ----------
--- ID 501-505 : Réservations avec différents statuts
--- RG-04 indique que dateExpiration = dateReservation + 7 jours
-
--- Réservation EN_ATTENTE (statut actif, réservé aujourd'hui)
-INSERT INTO reservation (reservation_id, book_id, user_id, date_reservation, date_expiration, statut) VALUES
-(501, 202, 301, NOW() - INTERVAL '2 days', NOW() + INTERVAL '5 days', 'EN_ATTENTE')
-ON CONFLICT (reservation_id) DO NOTHING;
-
--- Réservation DISPONIBLE (livre rendu, exemplaire disponible pour le réservataire)
-INSERT INTO reservation (reservation_id, book_id, user_id, date_reservation, date_expiration, statut) VALUES
-(502, 203, 302, NOW() - INTERVAL '3 days', NOW() + INTERVAL '4 days', 'DISPONIBLE')
-ON CONFLICT (reservation_id) DO NOTHING;
-
--- Réservation ANNULEA (annulée par l'utilisateur avant expiration)
-INSERT INTO reservation (reservation_id, book_id, user_id, date_reservation, date_expiration, statut) VALUES
-(503, 204, 301, NOW() - INTERVAL '5 days', NOW() - INTERVAL '2 days', 'ANNULEA')
-ON CONFLICT (reservation_id) DO NOTHING;
-
--- Réservation EXPIREE (date de réservation dépassée, jamais honorée)
-INSERT INTO reservation (reservation_id, book_id, user_id, date_reservation, date_expiration, statut) VALUES
-(504, 205, 302, NOW() - INTERVAL '10 days', NOW() - INTERVAL '3 days', 'EXPIREE')
-ON CONFLICT (reservation_id) DO NOTHING;
-
--- Réservation HONOREE (réservation terminée avec succès, livre fourni)
-INSERT INTO reservation (reservation_id, book_id, user_id, date_reservation, date_expiration, statut) VALUES
+-- RG-04 indique que dateExpiration = dateReservation + 7 jours.
+INSERT INTO reservation (id, livre_id, adherent_id, date_reservation, date_expiration, statut) VALUES
+(501, 202, 301, NOW() - INTERVAL '2 days', NOW() + INTERVAL '5 days', 'EN_ATTENTE'),
+(502, 203, 302, NOW() - INTERVAL '3 days', NOW() + INTERVAL '4 days', 'EN_ATTENTE'),
+(503, 204, 301, NOW() - INTERVAL '5 days', NOW() - INTERVAL '2 days', 'ANNULEE'),
+(504, 205, 302, NOW() - INTERVAL '10 days', NOW() - INTERVAL '3 days', 'EXPIREE'),
 (505, 202, 302, NOW() - INTERVAL '8 days', NOW() - INTERVAL '1 days', 'HONOREE')
-ON CONFLICT (reservation_id) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
