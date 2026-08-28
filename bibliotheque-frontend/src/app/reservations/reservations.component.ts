@@ -69,7 +69,7 @@ export class ReservationsComponent implements OnInit {
     });
 
     this.usersService.getUsersList().subscribe({
-      next: (data) => this.adherents = data,
+      next: (data) => this.adherents = data.filter(u => [301, 302, 303].includes(u.userId)),
       error: () => this.adherents = []
     });
   }
