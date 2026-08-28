@@ -48,16 +48,16 @@
       (annuler)="annulerReservation($event)">
     </app-reservation-list>
 
-    <!-- Formulaire de création -->
-    <app-reservation-form
-      [livres]="livres"
-      [adherents]="adherents"
-      [enCours]="formulaireEnCours"
-      [messageSucces]="messageSucces"
-      [messageErreur]="messageErreur"
-      (soumettre)="creerReservation($event.livreId, $event.adherentId)">
-    </app-reservation-form>
-
   </div>
+
+  <!-- Le formulaire reste disponible même lorsque la liste est vide. -->
+  <app-reservation-form
+    [livres]="livres"
+    [adherents]="adherents"
+    [enCours]="formulaireEnCours"
+    [messageSucces]="messageSucces"
+    [messageErreur]="messageErreur"
+    (soumettre)="creerReservation($event.livreId, $event.adherentId)">
+  </app-reservation-form>
 
 </div>

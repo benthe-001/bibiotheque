@@ -1,12 +1,35 @@
 table {
-  margin-bottom: 0;
+  margin-bottom: 2rem;
   color: #212529 !important;
+  border-collapse: collapse;
+}
+
+thead {
+  background-color: #f8f9fa;
 }
 
 th, td {
   color: #212529 !important;
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+th {
+  font-weight: 600;
+  background-color: #f8f9fa;
+  border-top: 2px solid #dee2e6;
+}
+
+tbody tr:hover {
+  background-color: #f8f9fa;
 }
 
 .badge {
   font-size: 0.85em;
+  padding: 0.5rem 0.75rem;
+}
+
+.btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.875rem;
 }

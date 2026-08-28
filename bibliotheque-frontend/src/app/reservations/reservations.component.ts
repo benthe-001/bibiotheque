@@ -22,16 +22,13 @@ export class ReservationsComponent implements OnInit {
   livres: Books[] = [];
   adherents: Users[] = [];
 
-  filtreStatut: string = '';
+  filtreStatut: string = 'TOUS';
 
   statuts: string[] = ['EN_ATTENTE', 'DISPONIBLE', 'ANNULEE', 'EXPIREE', 'HONOREE'];
 
   // État du formulaire
-  formulaireLivreId: number | null = null;
-  formulaireAdherentId: number | null = null;
   formulaireEnCours: boolean = false;
   messageSucces: string = '';
-  messageErreurFormulaire: string = '';
 
   // État de l'annulation
   annulationEnCours: number | null = null;
@@ -52,7 +49,8 @@ export class ReservationsComponent implements OnInit {
     this.messageErreur = '';
     this.messageErreurAnnulation = '';
 
-    this.reservationService.getReservations().subscribe({
+    const statut = this.filtreStatut === 'TOUS' ? undefined : this.filtreStatut;
+    this.reservationService.getReservations(statut).subscribe({
       next: (data) => {
         this.reservations = data;
         this.etat = data.length === 0 ? 'VIDE' : 'DONNEES';
@@ -69,7 +67,7 @@ export class ReservationsComponent implements OnInit {
     });
 
     this.usersService.getUsersList().subscribe({
-      next: (data) => this.adherents = data.filter(u => [301, 302, 303].includes(u.userId)),
+      next: (data) => this.adherents = data,
       error: () => this.adherents = []
     });
   }
@@ -116,6 +114,10 @@ export class ReservationsComponent implements OnInit {
       next: (data) => {
         this.reservations = data;
         this.etat = data.length === 0 ? 'VIDE' : 'DONNEES';
+      },
+      error: (err) => {
+        this.etat = 'ERREUR';
+        this.messageErreur = this.extraireMessageErreur(err, 'Le serveur est injoignable. Vérifiez que le backend est démarré.');
       }
     });
   }

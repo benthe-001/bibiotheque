@@ -22,7 +22,21 @@ export class ReservationListComponent {
     if (!date) {
       return '';
     }
-    const d = new Date(date);
-    return d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const d = this.parserDate(date);
+    if (isNaN(d.getTime())) {
+      return date;
+    }
+    return d.toLocaleDateString('fr-FR');
+  }
+
+  private parserDate(date: string): Date {
+    const parts = date.split('-');
+    if (parts.length === 3 && parts[0].length === 2 && parts[2].length === 4) {
+      const jour = Number(parts[0]);
+      const mois = Number(parts[1]) - 1;
+      const annee = Number(parts[2]);
+      return new Date(annee, mois, jour);
+    }
+    return new Date(date);
   }
 }

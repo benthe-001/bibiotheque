@@ -16,10 +16,10 @@
       <div class="row">
         <div class="col-md-5 mb-3">
           <label for="livre" class="form-label">Livre</label>
-                    <select id="livre" class="form-select" [(ngModel)]="livreId" name="livreId">
-            <option [ngValue]="null" disabled>-- Choisir un livre indisponible --</option>
-            <option *ngFor="let livre of livres" [ngValue]="livre.bookId" [hidden]="livre.noOfCopies > 0">
-              {{ livre.bookName }} — {{ livre.bookAuthor }} ({{ livre.noOfCopies }} exemplaire{{ livre.noOfCopies > 1 ? 's' : '' }})
+          <select id="livre" class="form-select" [(ngModel)]="livreId" name="livreId">
+            <option [ngValue]="null" disabled>-- Sélectionner un livre --</option>
+            <option *ngFor="let livre of livres" [ngValue]="livre.bookId" [disabled]="livre.noOfCopies > 0">
+              {{ livre.bookName }} — {{ livre.bookAuthor }} ({{ livre.noOfCopies }} exemplaire{{ livre.noOfCopies !== 1 ? 's' : '' }})
             </option>
           </select>
         </div>
