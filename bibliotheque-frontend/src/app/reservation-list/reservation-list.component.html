@@ -14,12 +14,12 @@
       <td>{{ reservation.livreTitre }}</td>
       <td>{{ reservation.adherentNom }}</td>
       <td>
-        <span class="badge text-white fw-bold" [ngClass]="{
+        <span class="badge fw-bold" [ngClass]="{
           'bg-warning text-dark': reservation.statut === 'EN_ATTENTE',
-          'bg-success': reservation.statut === 'DISPONIBLE',
-          'bg-secondary': reservation.statut === 'ANNULEE',
-          'bg-danger': reservation.statut === 'EXPIREE',
-          'bg-primary': reservation.statut === 'HONOREE'
+          'bg-success text-white': reservation.statut === 'DISPONIBLE',
+          'bg-secondary text-white': reservation.statut === 'ANNULEE',
+          'bg-danger text-white': reservation.statut === 'EXPIREE',
+          'bg-primary text-white': reservation.statut === 'HONOREE'
         }">{{ reservation.statut }}</span>
       </td>
       <td>{{ formaterDate(reservation.dateReservation) }}</td>
