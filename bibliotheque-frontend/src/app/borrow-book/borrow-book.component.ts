@@ -4,6 +4,7 @@ import { Borrow } from '../_model/borrow';
 import { BooksService } from '../_service/books.service';
 import { BorrowService } from '../_service/borrow.service';
 import { UserAuthService } from '../_service/user-auth.service';
+import { messageErreurHttp } from '../_util/message-erreur.util';
 
 @Component({
   selector: 'app-borrow-book',
@@ -14,6 +15,7 @@ export class BorrowBookComponent implements OnInit {
 
   books: Books[] = [];
   etat: 'CHARGEMENT' | 'DONNEES' | 'VIDE' | 'ERREUR' = 'CHARGEMENT';
+  messageErreurChargement: string = '';
   message: string = '';
   messageErreur: string = '';
   empruntEnCours: number | null = null;
@@ -34,13 +36,15 @@ export class BorrowBookComponent implements OnInit {
 
   public getBooks() {
     this.etat = 'CHARGEMENT';
+    this.messageErreurChargement = '';
     this.message = '';
     this.messageErreur = '';
     this.booksService.getBooksList().subscribe(data => {
       this.books = data;
       this.etat = data.length === 0 ? 'VIDE' : 'DONNEES';
-    }, () => {
+    }, (err) => {
       this.etat = 'ERREUR';
+      this.messageErreurChargement = messageErreurHttp(err, "afficher les livres à emprunter");
     });
   }
 
@@ -56,9 +60,9 @@ export class BorrowBookComponent implements OnInit {
       // Le backend renvoie une phrase décrivant l'emprunt réussi
       this.message = typeof data === 'string' ? data : 'Emprunt effectué avec succès.';
       this.getBooks();
-    }, () => {
+    }, (err) => {
       this.empruntEnCours = null;
-      this.messageErreur = "L'emprunt n'a pas pu être effectué. Le livre est peut-être indisponible.";
+      this.messageErreur = messageErreurHttp(err, "enregistrer l'emprunt");
     });
   }
 }

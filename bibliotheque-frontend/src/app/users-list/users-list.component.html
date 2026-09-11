@@ -14,8 +14,11 @@
 
 <!-- Erreur -->
 <div *ngIf="etat === 'ERREUR'" class="alert alert-danger" role="alert">
-  Impossible de charger les comptes. Vérifiez que le serveur est démarré, puis
-  <a href="#" class="alert-link" (click)="$event.preventDefault(); getUsers()">réessayez</a>.
+  <div class="fw-semibold mb-1">Les comptes ne peuvent pas s'afficher pour le moment.</div>
+  <div>{{ messageErreur }}</div>
+  <div class="mt-2">
+    <a href="#" class="alert-link" (click)="$event.preventDefault(); getUsers()">Réessayer</a>
+  </div>
 </div>
 
 <!-- Vide -->

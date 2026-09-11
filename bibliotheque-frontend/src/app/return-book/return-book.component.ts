@@ -3,6 +3,7 @@ import { Borrow } from '../_model/borrow';
 import { BooksService } from '../_service/books.service';
 import { BorrowService } from '../_service/borrow.service';
 import { UserAuthService } from '../_service/user-auth.service';
+import { messageErreurHttp } from '../_util/message-erreur.util';
 
 @Component({
   selector: 'app-return-book',
@@ -14,6 +15,7 @@ export class ReturnBookComponent implements OnInit {
   borrow: Borrow[] = [];
   private livres: { bookId: number; bookName: string }[] = [];
   etat: 'CHARGEMENT' | 'DONNEES' | 'VIDE' | 'ERREUR' = 'CHARGEMENT';
+  messageErreurChargement: string = '';
   message: string = '';
   messageErreur: string = '';
   retourEnCours: number | null = null;
@@ -44,13 +46,15 @@ export class ReturnBookComponent implements OnInit {
 
   public getBorrowsByUser() {
     this.etat = 'CHARGEMENT';
+    this.messageErreurChargement = '';
     this.message = '';
     this.messageErreur = '';
     this.borrowService.getBooksBorrowedByUser(this.userId).subscribe(data => {
       this.borrow = data;
       this.etat = data.length === 0 ? 'VIDE' : 'DONNEES';
-    }, () => {
+    }, (err) => {
       this.etat = 'ERREUR';
+      this.messageErreurChargement = messageErreurHttp(err, 'afficher vos emprunts');
     });
   }
 
@@ -69,9 +73,9 @@ export class ReturnBookComponent implements OnInit {
       this.retourEnCours = null;
       this.message = 'Livre retourné avec succès. Merci !';
       this.getBorrowsByUser();
-    }, () => {
+    }, (err) => {
       this.retourEnCours = null;
-      this.messageErreur = "Le retour n'a pas pu être enregistré. Réessayez.";
+      this.messageErreur = messageErreurHttp(err, 'enregistrer le retour');
     });
   }
 

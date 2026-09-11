@@ -14,8 +14,11 @@
 
 <!-- Erreur -->
 <div *ngIf="etat === 'ERREUR'" class="alert alert-danger" role="alert">
-  Impossible de charger le catalogue. Vérifiez que le serveur est démarré, puis
-  <a href="#" class="alert-link" (click)="$event.preventDefault(); getBooks()">réessayez</a>.
+  <div class="fw-semibold mb-1">Le catalogue ne peut pas s'afficher pour le moment.</div>
+  <div>{{ messageErreur }}</div>
+  <div class="mt-2">
+    <a href="#" class="alert-link" (click)="$event.preventDefault(); getBooks()">Réessayer</a>
+  </div>
 </div>
 
 <!-- Vide -->

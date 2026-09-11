@@ -3,6 +3,7 @@ import { NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserAuthService } from '../_service/user-auth.service';
 import { UsersService } from '../_service/users.service';
+import { messageErreurHttp } from '../_util/message-erreur.util';
 
 @Component({
   selector: 'app-login',
@@ -44,9 +45,11 @@ export class LoginComponent implements OnInit {
       },
       (error) => {
         this.connexionEnCours = false;
-        this.messageErreur = error.status === 0
-          ? "Le serveur est injoignable. Vérifiez que le backend est démarré."
-          : "Identifiant ou mot de passe incorrect. Réessayez.";
+        if (error.status === 400 || error.status === 401) {
+          this.messageErreur = "Identifiant ou mot de passe incorrect. Réessayez.";
+        } else {
+          this.messageErreur = messageErreurHttp(error, 'vous connecter');
+        }
       }
     );
   }

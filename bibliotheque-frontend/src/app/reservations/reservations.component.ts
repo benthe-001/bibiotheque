@@ -5,6 +5,7 @@ import { Users } from '../_model/users';
 import { BooksService } from '../_service/books.service';
 import { ReservationService } from '../_service/reservation.service';
 import { UsersService } from '../_service/users.service';
+import { messageErreurHttp } from '../_util/message-erreur.util';
 
 export type EtatChargement = 'CHARGEMENT' | 'DONNEES' | 'VIDE' | 'ERREUR';
 
@@ -17,6 +18,7 @@ export class ReservationsComponent implements OnInit {
 
   etat: EtatChargement = 'CHARGEMENT';
   messageErreur: string = '';
+  messageCreation: string = '';
 
   reservations: Reservation[] = [];
   livres: Books[] = [];
@@ -60,6 +62,7 @@ export class ReservationsComponent implements OnInit {
   chargerDonnees(): void {
     this.etat = 'CHARGEMENT';
     this.messageErreur = '';
+    this.messageCreation = '';
     this.messageErreurAnnulation = '';
 
     const statut = this.filtreStatut === 'TOUS' ? undefined : this.filtreStatut;
@@ -70,7 +73,7 @@ export class ReservationsComponent implements OnInit {
       },
       error: (err) => {
         this.etat = 'ERREUR';
-        this.messageErreur = this.extraireMessageErreur(err, 'Le serveur est injoignable. Vérifiez que le backend est démarré.');
+        this.messageErreur = messageErreurHttp(err, 'afficher les réservations');
       }
     });
 
@@ -88,6 +91,8 @@ export class ReservationsComponent implements OnInit {
   filtrerParStatut(statut: string): void {
     this.filtreStatut = statut;
     this.etat = 'CHARGEMENT';
+    this.messageErreur = '';
+    this.messageCreation = '';
     this.messageErreurAnnulation = '';
 
     this.reservationService.getReservations(statut === 'TOUS' ? undefined : statut).subscribe({
@@ -97,7 +102,7 @@ export class ReservationsComponent implements OnInit {
       },
       error: (err) => {
         this.etat = 'ERREUR';
-        this.messageErreur = this.extraireMessageErreur(err, 'Le serveur est injoignable. Vérifiez que le backend est démarré.');
+        this.messageErreur = messageErreurHttp(err, 'afficher les réservations');
       }
     });
   }
@@ -116,7 +121,7 @@ export class ReservationsComponent implements OnInit {
       },
       error: (err) => {
         this.formulaireEnCours = false;
-        this.messageErreur = this.extraireMessageErreur(err, 'La réservation n’a pas pu être créée.');
+        this.messageCreation = this.extraireMessageErreur(err, "La réservation n'a pas pu être créée.");
       }
     });
   }
@@ -130,7 +135,7 @@ export class ReservationsComponent implements OnInit {
       },
       error: (err) => {
         this.etat = 'ERREUR';
-        this.messageErreur = this.extraireMessageErreur(err, 'Le serveur est injoignable. Vérifiez que le backend est démarré.');
+        this.messageErreur = messageErreurHttp(err, 'actualiser les réservations');
       }
     });
   }
@@ -138,6 +143,7 @@ export class ReservationsComponent implements OnInit {
   annulerReservation(id: number): void {
     this.annulationEnCours = id;
     this.messageErreurAnnulation = '';
+    this.messageCreation = '';
     this.messageSucces = '';
 
     this.reservationService.annulerReservation(id).subscribe({
@@ -185,17 +191,17 @@ export class ReservationsComponent implements OnInit {
       ? payload.regle.toUpperCase()
       : '';
     const messagesParRegle: { [regle: string]: string } = {
-      'RG-01': 'Impossible de réserver ce livre : il est disponible.',
-      'RG-02': 'Impossible de réserver ce livre une deuxième fois : cet livre possède déjà une réservation active.',
-      'RG-03': 'Impossible de réserver : cet adhérent a atteint le quota de 3 réservations actives.',
-      'RG-05': 'Cette réservation ne peut pas être annulée dans son état actuel.',
-      'RG-06': 'Cette réservation est terminée et ne peut plus changer d’état.'
+      'RG-01': 'Ce livre est actuellement disponible : réservez uniquement les livres indisponibles.',
+      'RG-02': 'Ce livre fait déjà partie des réservations en cours de cet adhérent.',
+      'RG-03': 'Cet adhérent a déjà 3 réservations en cours, le maximum autorisé.',
+      'RG-05': 'Seule une réservation en attente ou disponible peut être annulée.',
+      'RG-06': 'Cette réservation est déjà clôturée : elle ne peut plus être modifiée.'
     };
     if (messagesParRegle[regle]) {
       return messagesParRegle[regle];
     }
     if (err.status >= 500) {
-      return 'La réservation ne peut pas être traitée pour le moment. Réessayez plus tard.';
+      return 'Le service rencontre un problème. Réessayez plus tard.';
     }
     if (err.status === 404) {
       return 'Le livre ou l’adhérent sélectionné est introuvable.';

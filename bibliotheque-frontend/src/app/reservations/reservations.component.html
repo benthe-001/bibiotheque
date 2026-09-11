@@ -17,7 +17,7 @@
 
   <!-- ===== ÉTAT : ERREUR ===== -->
   <div *ngIf="etat === 'ERREUR'" class="alert alert-danger my-5" role="alert">
-    <h4 class="alert-heading">Impossible de charger les réservations</h4>
+    <h4 class="alert-heading">Les réservations ne peuvent pas s'afficher pour le moment</h4>
     <p>{{ messageErreur }}</p>
     <button class="btn btn-primary" (click)="chargerDonnees()">Réessayer</button>
   </div>
@@ -61,7 +61,7 @@
     [adherents]="adherents"
     [enCours]="formulaireEnCours"
     [messageSucces]="messageSucces"
-    [messageErreur]="messageErreur"
+    [messageErreur]="messageCreation"
     (soumettre)="creerReservation($event.livreId, $event.adherentId)">
   </app-reservation-form>
 
