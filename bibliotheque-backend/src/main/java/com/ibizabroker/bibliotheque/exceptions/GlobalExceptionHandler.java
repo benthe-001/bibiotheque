@@ -4,6 +4,7 @@ import com.ibizabroker.bibliotheque.dto.ErrorResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -11,6 +12,27 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * 403 Forbidden : identité connue mais droits insuffisants (règles de sécurité RS-*).
+     * Ne jamais renvoyer un 401 à un utilisateur authentifié sans droits.
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponseDTO> handleForbidden(ForbiddenException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponseDTO(ex.getRegle(), ex.getMessage()));
+    }
+
+    /**
+     * 403 Forbidden : refus d'accès levé par Spring Security (@PreAuthorize),
+     * ex. un ADHERENT qui appelle DELETE /api/reservations/{id} (RS-02).
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponseDTO(null,
+                        "403 : Vous n'avez pas les droits nécessaires pour effectuer cette opération."));
+    }
 
     @ExceptionHandler(BusinessRuleViolationException.class)
     public ResponseEntity<ErrorResponseDTO> handleBusinessRuleViolation(BusinessRuleViolationException ex) {

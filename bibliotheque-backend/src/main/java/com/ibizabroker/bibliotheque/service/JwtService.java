@@ -4,21 +4,23 @@ import com.ibizabroker.bibliotheque.dao.UsersRepository;
 import com.ibizabroker.bibliotheque.entity.JwtRequest;
 import com.ibizabroker.bibliotheque.entity.JwtResponse;
 import com.ibizabroker.bibliotheque.entity.Users;
+import com.ibizabroker.bibliotheque.security.UserPrincipal;
 import com.ibizabroker.bibliotheque.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Set;
-
+/**
+ * Authentification : vérifie les identifiants et délivre le JWT.
+ * Le UserDetails produit est un UserPrincipal (userId + autorités mappées),
+ * ce qui rend l'identité disponible dans tout le traitement de la requête.
+ */
 @Service
 public class JwtService implements UserDetailsService {
 
@@ -39,31 +41,21 @@ public class JwtService implements UserDetailsService {
         UserDetails userDetails = loadUserByUsername(username);
         String newGeneratedToken = jwtUtil.generateToken(userDetails);
 
-        Users user = userDao.findByUsername(username).get();
+        Users user = userDao.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
         return new JwtResponse(user, newGeneratedToken);
     }
 
+    /**
+     * Construit l'identité complète de l'utilisateur (UserPrincipal) :
+     * userId + autorités issues du mapping des rôles (historique "Admin"/"User"
+     * → canoniques BIBLIOTHECAIRE/ADHERENT).
+     */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Users user = userDao.findByUsername(username).get();
-
-        if (user != null) {
-            return new org.springframework.security.core.userdetails.User(
-                    user.getUsername(),
-                    user.getPassword(),
-                    getAuthority(user)
-            );
-        } else {
-            throw new UsernameNotFoundException("User not found with username: " + username);
-        }
-    }
-
-    private Set getAuthority(Users user) {
-        Set<SimpleGrantedAuthority> authorities = new HashSet<>();
-        user.getRole().forEach(role -> {
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getRoleName()));
-        });
-        return authorities;
+        Users user = userDao.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        return UserPrincipal.from(user);
     }
 
     private void authenticate(String userName, String userPassword) throws Exception {
