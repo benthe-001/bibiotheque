@@ -22,13 +22,16 @@ export class BorrowBookComponent implements OnInit {
 
   borrow: Borrow = new Borrow();
 
+  /** Identifiant de session, relu à chaque usage (jamais null après le guard). */
+  get userId(): number {
+    return this.userAuthService.getUserId() ?? 0;
+  }
+
   constructor(
     private booksService: BooksService,
     private userAuthService: UserAuthService,
     private borrowService: BorrowService,
   ) { }
-
-  userId = this.userAuthService.getUserId();
 
   ngOnInit(): void {
     this.getBooks();

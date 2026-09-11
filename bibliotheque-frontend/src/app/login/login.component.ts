@@ -36,11 +36,16 @@ export class LoginComponent implements OnInit {
         this.userAuthSerivce.setUserId(response.user.userId);
         this.userAuthSerivce.setName(response.user.name);
 
-        const role = response.user.role[0].roleName;
-        if (role === 'Admin') {
+        const roles = Array.isArray(response.user.role) ? response.user.role : [response.user.role];
+        const roleNames = roles.map((r: any) => r && r.roleName).filter((r: any) => !!r);
+        if (roleNames.includes('Admin')) {
           this.router.navigate(['/books']);
-        } else {
+        } else if (roleNames.includes('User')) {
           this.router.navigate(['/borrow-book'])
+        } else {
+          // Rôle inconnu : pas de redirection silencieuse, message explicite.
+          this.connexionEnCours = false;
+          this.messageErreur = 'Votre compte est connecté mais sans rôle reconnu. Contactez le bibliothécaire.';
         }
       },
       (error) => {

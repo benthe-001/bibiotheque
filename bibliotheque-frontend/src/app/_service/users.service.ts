@@ -31,7 +31,7 @@ export class UsersService {
     const userRoles: any = this.userAuthService.getRoles();
 
     return Array.isArray(userRoles)
-      && userRoles.some(userRole => allowedRoles.includes(userRole.roleName));
+      && userRoles.some(userRole => userRole && allowedRoles.includes(userRole.roleName));
   }
 
   getUsersList(): Observable<Users[]> {

@@ -19,6 +19,12 @@ export class AuthInterceptor implements HttpInterceptor {
 
     const token = this.userAuthService.getToken();
 
+    // Sans session (token absent), on laisse passer la requête telle quelle :
+    // envoyer "Bearer null" ferait rejeter l'appel par le backend.
+    if (!token) {
+      return next.handle(req);
+    }
+
     req = this.addToken(req, token);
 
     return next.handle(req).pipe(

@@ -3,5 +3,7 @@ export class Users {
     username: string;
     name: string;
     password: string;
-    role: any;
+    /** Initialisé avec un rôle Adhérent par défaut pour que le ngModel du
+     * formulaire (user.role[0].roleName) ne plante jamais. */
+    role: any[] = [{ roleName: 'User' }];
 }

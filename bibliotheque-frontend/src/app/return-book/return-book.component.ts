@@ -26,7 +26,10 @@ export class ReturnBookComponent implements OnInit {
     private userAuthService: UserAuthService
   ) { }
 
-  userId = this.userAuthService.getUserId();
+  /** Identifiant de session, relu à chaque usage (jamais null après le guard). */
+  get userId(): number {
+    return this.userAuthService.getUserId() ?? 0;
+  }
 
   ngOnInit(): void {
     this.getBorrowsByUser();

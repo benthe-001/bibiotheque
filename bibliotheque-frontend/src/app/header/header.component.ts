@@ -10,8 +10,8 @@ import { UsersService } from '../_service/users.service';
 })
 export class HeaderComponent implements OnInit {
 
-  name = this.userAuthService.getName();
-  initiale = this.name ? this.name.charAt(0) : '?';
+  name: string | null = null;
+  initiale: string = '?';
 
   constructor(
     private userAuthService: UserAuthService,
@@ -20,7 +20,8 @@ export class HeaderComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    // Rafraîchit le nom affiché si la session a changé (connexion/déconnexion)
+    // Lecture reportee au cycle de vie (et pas au constructeur) : en cas de
+    // localStorage vide/corrompu on affiche un fallback au lieu de crasher.
     this.name = this.userAuthService.getName();
     this.initiale = this.name ? this.name.charAt(0) : '?';
   }
