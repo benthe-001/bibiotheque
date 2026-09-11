@@ -1,4 +1,4 @@
-.home {
-    margin-top: 200px;
-    font-size: 80px;
+/* Le hero et les raccourcis sont stylés par le design system global (styles.css). */
+.app-hero {
+  margin-bottom: 0.5rem;
 }

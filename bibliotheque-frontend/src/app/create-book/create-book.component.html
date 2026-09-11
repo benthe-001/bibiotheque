@@ -1,27 +1,35 @@
-<div class="container col-md-6 offset-mid-3">
-    <h3 class="text-center"> Add Book </h3>
-    <form (ngSubmit) = "onSubmit()" autocomplete="off">
+<div class="row justify-content-center mt-2">
+  <div class="col-md-6 col-lg-5">
+    <div class="app-card">
+      <div class="text-center mb-4">
+        <div class="login-icone">➕</div>
+        <h2 class="page-title">Ajouter un livre</h2>
+        <p class="page-subtitle mb-0">Enrichir le catalogue de la bibliothèque.</p>
+      </div>
 
-        <div class="form-group">
-            <label style="margin-bottom: 10px"> Book Name </label>
-            <input type="text" class="form-control" style="margin-bottom: 10px" id="bookName" [(ngModel)] = "book.bookName" name="bookName">
+      <form (ngSubmit)="onSubmit()" #form="ngForm" autocomplete="off">
+        <div class="mb-3">
+          <label class="form-label" for="bookName">Titre</label>
+          <input type="text" class="form-control" id="bookName" [(ngModel)]="book.bookName" name="bookName" required placeholder="Ex : Le Petit Prince">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="bookAuthor">Auteur</label>
+          <input type="text" class="form-control" id="bookAuthor" [(ngModel)]="book.bookAuthor" name="bookAuthor" required placeholder="Ex : Antoine de Saint-Exupéry">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="bookGenre">Genre</label>
+          <input type="text" class="form-control" id="bookGenre" [(ngModel)]="book.bookGenre" name="bookGenre" placeholder="Ex : Roman, Science-fiction...">
+        </div>
+        <div class="mb-4">
+          <label class="form-label" for="noOfCopies">Nombre d'exemplaires</label>
+          <input type="number" min="0" class="form-control" id="noOfCopies" [(ngModel)]="book.noOfCopies" name="noOfCopies" required>
         </div>
 
-        <div class="form-group">
-            <label style="margin-bottom: 10px"> Author </label>
-            <input type="text" class="form-control" style="margin-bottom: 10px" id="bookAuthor" [(ngModel)] = "book.bookAuthor" name="bookAuthor">
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary flex-fill" type="submit" [disabled]="form.invalid">Enregistrer</button>
+          <button class="btn btn-outline-secondary" type="button" routerLink="/books">Annuler</button>
         </div>
-
-        <div class="form-group">
-            <label style="margin-bottom: 10px"> Genre </label>
-            <input type="text" class="form-control" style="margin-bottom: 10px" id="bookGenre" [(ngModel)] = "book.bookGenre" name="bookGenre">
-        </div>
-
-        <div class="form-group">
-            <label style="margin-bottom: 10px"> Number of Copies </label>
-            <input type="text" class="form-control" style="margin-bottom: 10px" id="noOfCopies" [(ngModel)] = "book.noOfCopies" name="noOfCopies">
-        </div>
-
-        <button class="btn btn-success" type="submit"> Submit </button>
-    </form>
+      </form>
+    </div>
+  </div>
 </div>

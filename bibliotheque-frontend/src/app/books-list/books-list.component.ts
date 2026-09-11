@@ -10,7 +10,8 @@ import { BooksService } from '../_service/books.service';
 })
 export class BooksListComponent implements OnInit {
 
-  books: Books[];
+  books: Books[] = [];
+  etat: 'CHARGEMENT' | 'DONNEES' | 'VIDE' | 'ERREUR' = 'CHARGEMENT';
 
   constructor(private booksService: BooksService,
     private router: Router) { }
@@ -19,9 +20,13 @@ export class BooksListComponent implements OnInit {
     this.getBooks();
   }
 
-  private getBooks() {
-    this.booksService.getBooksList().subscribe(data =>{
+  public getBooks() {
+    this.etat = 'CHARGEMENT';
+    this.booksService.getBooksList().subscribe(data => {
       this.books = data;
+      this.etat = data.length === 0 ? 'VIDE' : 'DONNEES';
+    }, () => {
+      this.etat = 'ERREUR';
     });
   }
 
@@ -30,7 +35,11 @@ export class BooksListComponent implements OnInit {
   }
 
   deleteBook(bookId: number) {
-    this.booksService.deleteBook(bookId).subscribe( data=> {
+    // Confirmation avant suppression (action irréversible)
+    if (!confirm('Supprimer définitivement ce livre du catalogue ?')) {
+      return;
+    }
+    this.booksService.deleteBook(bookId).subscribe(() => {
       this.getBooks();
     });
   }

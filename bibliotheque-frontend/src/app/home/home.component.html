@@ -1,3 +1,73 @@
-<div class="container">
-    <p class="home">Welcome to Online Library System</p>
+<div class="app-hero">
+  <h1>📚 Bienvenue à la Bibliothèque</h1>
+  <p class="mb-0">Consultez les livres, empruntez, réservez — tout au même endroit.</p>
+</div>
+
+<div class="row g-3 mt-1">
+
+  <!-- Raccourcis BIBLIOTHECAIRE -->
+  <ng-container *ngIf="userService.roleMatch(['Admin'])">
+    <div class="col-md-3 col-sm-6">
+      <a class="quick-link" routerLink="/books">
+        <div class="quick-icone">📖</div>
+        <div class="quick-titre">Catalogue des livres</div>
+        <div class="quick-texte">Consulter, modifier et supprimer les livres.</div>
+      </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <a class="quick-link" routerLink="/create-book">
+        <div class="quick-icone">➕</div>
+        <div class="quick-titre">Ajouter un livre</div>
+        <div class="quick-texte">Enrichir le catalogue de la bibliothèque.</div>
+      </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <a class="quick-link" routerLink="/users">
+        <div class="quick-icone">👥</div>
+        <div class="quick-titre">Adhérents</div>
+        <div class="quick-texte">Gérer les comptes et leurs rôles.</div>
+      </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <a class="quick-link" routerLink="/reservations">
+        <div class="quick-icone">🔖</div>
+        <div class="quick-titre">Réservations</div>
+        <div class="quick-texte">Suivre toutes les réservations en cours.</div>
+      </a>
+    </div>
+  </ng-container>
+
+  <!-- Raccourcis ADHERENT -->
+  <ng-container *ngIf="userService.roleMatch(['User'])">
+    <div class="col-md-4 col-sm-6">
+      <a class="quick-link" routerLink="/borrow-book">
+        <div class="quick-icone">🤝</div>
+        <div class="quick-titre">Emprunter un livre</div>
+        <div class="quick-texte">Voir les livres disponibles et emprunter.</div>
+      </a>
+    </div>
+    <div class="col-md-4 col-sm-6">
+      <a class="quick-link" routerLink="/return-book">
+        <div class="quick-icone">↩️</div>
+        <div class="quick-titre">Retourner un livre</div>
+        <div class="quick-texte">Rendre les livres empruntés.</div>
+      </a>
+    </div>
+    <div class="col-md-4 col-sm-6">
+      <a class="quick-link" routerLink="/reservations">
+        <div class="quick-icone">🔖</div>
+        <div class="quick-titre">Mes réservations</div>
+        <div class="quick-texte">Suivre et annuler vos réservations.</div>
+      </a>
+    </div>
+  </ng-container>
+
+  <!-- Non connecté : invitation à se connecter -->
+  <div class="col-12" *ngIf="!userService.roleMatch(['Admin']) && !userService.roleMatch(['User'])">
+    <div class="app-card text-center">
+      <p class="mb-3 text-app-muted">Connectez-vous pour accéder au catalogue et à vos emprunts.</p>
+      <a class="btn btn-primary" routerLink="/login">Se connecter</a>
+    </div>
+  </div>
+
 </div>

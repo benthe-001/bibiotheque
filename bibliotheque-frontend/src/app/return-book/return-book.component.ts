@@ -1,6 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
-import { Books } from '../_model/books';
 import { Borrow } from '../_model/borrow';
 import { BooksService } from '../_service/books.service';
 import { BorrowService } from '../_service/borrow.service';
@@ -13,8 +11,12 @@ import { UserAuthService } from '../_service/user-auth.service';
 })
 export class ReturnBookComponent implements OnInit {
 
-  books: Books[];
-  borrow: Borrow[];
+  borrow: Borrow[] = [];
+  private livres: { bookId: number; bookName: string }[] = [];
+  etat: 'CHARGEMENT' | 'DONNEES' | 'VIDE' | 'ERREUR' = 'CHARGEMENT';
+  message: string = '';
+  messageErreur: string = '';
+  retourEnCours: number | null = null;
 
   constructor(
     private borrowService: BorrowService,
@@ -25,30 +27,69 @@ export class ReturnBookComponent implements OnInit {
   userId = this.userAuthService.getUserId();
 
   ngOnInit(): void {
-    this.getBooks();
-    this.getBooksByUser();
-  }
-
-  private getBooks() {
-    this.booksService.getBooksList().subscribe(data =>{
-      this.books = data;
+    this.getBorrowsByUser();
+    // Charge le catalogue pour afficher les titres plutôt que les identifiants
+    this.booksService.getBooksList().subscribe(data => {
+      this.livres = data;
+    }, () => {
+      this.livres = [];
     });
   }
 
-  
-  private getBooksByUser() {
-    this.borrowService.getBooksBorrowedByUser(this.userId).subscribe(data => {
-      this.borrow = data;
-    })
+  /** Titre lisible d'un livre à partir de son identifiant. */
+  nomLivre(bookId: number): string {
+    const livre = this.livres.find(l => l.bookId === bookId);
+    return livre ? livre.bookName : 'Livre n°' + bookId;
   }
 
-  brw: Borrow = new Borrow();
+  public getBorrowsByUser() {
+    this.etat = 'CHARGEMENT';
+    this.message = '';
+    this.messageErreur = '';
+    this.borrowService.getBooksBorrowedByUser(this.userId).subscribe(data => {
+      this.borrow = data;
+      this.etat = data.length === 0 ? 'VIDE' : 'DONNEES';
+    }, () => {
+      this.etat = 'ERREUR';
+    });
+  }
+
+  /** Indique si l'emprunt a dépassé sa date d'échéance. */
+  enRetard(b: Borrow): boolean {
+    return b.returnDate === null && b.dueDate !== null && new Date(b.dueDate) < new Date();
+  }
+
   public returnBook(borrowId: number) {
-    this.brw.borrowId = borrowId;
-    this.borrowService.returnBook(this.brw).subscribe(data => {
-      console.log(data);
-    },
-    error => console.log(error));
+    this.retourEnCours = borrowId;
+    this.message = '';
+    this.messageErreur = '';
+    const brw: Borrow = new Borrow();
+    brw.borrowId = borrowId;
+    this.borrowService.returnBook(brw).subscribe(() => {
+      this.retourEnCours = null;
+      this.message = 'Livre retourné avec succès. Merci !';
+      this.getBorrowsByUser();
+    }, () => {
+      this.retourEnCours = null;
+      this.messageErreur = "Le retour n'a pas pu être enregistré. Réessayez.";
+    });
+  }
+
+  /** Formate une date en format lisible français (ou renvoie la valeur brute). */
+  formaterDate(date: Date | string | null): string {
+    if (!date) {
+      return '—';
+    }
+    const d = date instanceof Date ? date : this.parserDate(date);
+    return isNaN(d.getTime()) ? String(date) : d.toLocaleDateString('fr-FR');
+  }
+
+  private parserDate(date: string): Date {
+    const parts = date.split('-');
+    if (parts.length === 3 && parts[0].length === 2 && parts[2].length === 4) {
+      return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+    }
+    return new Date(date);
   }
 
 }

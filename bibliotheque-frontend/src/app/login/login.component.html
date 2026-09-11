@@ -1,14 +1,29 @@
-<div class="container col-md-6 offset-mid-3">
-<form autocomplete="off" #loginForm="ngForm" (ngSubmit)="login(loginForm)">
-    <div class="mb-3">
-      <label class="form-label" style="margin-top: 100px;">Username</label>
-      <input type="text" name="username" ngModel class="form-control" id="loginUsername" placeholder="Enter your username">
-      <div id="emailHelp" class="form-text">Username provided by the library admin.</div>
+<div class="row justify-content-center mt-4">
+  <div class="col-md-5 col-lg-4">
+    <div class="app-card">
+      <div class="text-center mb-4">
+        <div class="login-icone">📚</div>
+        <h2 class="page-title">Connexion</h2>
+        <p class="page-subtitle mb-0">Accédez à votre espace bibliothèque.</p>
+      </div>
+
+      <div *ngIf="messageErreur" class="alert alert-danger" role="alert">{{ messageErreur }}</div>
+
+      <form autocomplete="off" #loginForm="ngForm" (ngSubmit)="login(loginForm)">
+        <div class="mb-3">
+          <label class="form-label" for="loginUsername">Identifiant</label>
+          <input type="text" name="username" ngModel required class="form-control" id="loginUsername" placeholder="Votre identifiant">
+          <div class="form-text">L'identifiant vous a été fourni par le bibliothécaire.</div>
+        </div>
+        <div class="mb-4">
+          <label class="form-label" for="loginPassword">Mot de passe</label>
+          <input type="password" name="password" ngModel required class="form-control" id="loginPassword" placeholder="Votre mot de passe">
+        </div>
+        <button type="submit" class="btn btn-primary w-100" [disabled]="loginForm.invalid || connexionEnCours">
+          <span *ngIf="connexionEnCours" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          {{ connexionEnCours ? 'Connexion...' : 'Se connecter' }}
+        </button>
+      </form>
     </div>
-    <div class="mb-3">
-      <label class="form-label">Password</label>
-      <input type="password" name="password" ngModel class="form-control" id="loginPassword" placeholder="Enter your password">
-    </div>
-    <input type="submit" value="Login" class="btn btn-primary"/>
-  </form>
+  </div>
 </div>

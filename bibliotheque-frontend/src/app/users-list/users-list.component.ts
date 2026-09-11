@@ -10,26 +10,23 @@ import { UsersService } from '../_service/users.service';
 })
 export class UsersListComponent implements OnInit {
 
-  users: Users[];
+  users: Users[] = [];
+  etat: 'CHARGEMENT' | 'DONNEES' | 'VIDE' | 'ERREUR' = 'CHARGEMENT';
 
   constructor(private usersService: UsersService,
     private router: Router) { }
 
   ngOnInit(): void {
     this.getUsers();
-    // this.users = [{
-    //   "userId": 1,
-    //   "name": "tarun",
-    //   "username": "tarungowda",
-    //   "role": "STUDENT",
-    //   "password": "sdklfjlakdsf"
-    // }]
   }
 
-  private getUsers() {
-    this.usersService.getUsersList().subscribe(data =>{
+  public getUsers() {
+    this.etat = 'CHARGEMENT';
+    this.usersService.getUsersList().subscribe(data => {
       this.users = data;
-      console.log(this.users);
+      this.etat = data.length === 0 ? 'VIDE' : 'DONNEES';
+    }, () => {
+      this.etat = 'ERREUR';
     });
   }
 
@@ -41,4 +38,8 @@ export class UsersListComponent implements OnInit {
     this.router.navigate(['update-user', userId ]);
   }
 
+  /** Nom du premier rôle, sans plante si le rôle est absent. */
+  nomRole(user: Users): string {
+    return user.role && user.role.length > 0 ? user.role[0].roleName : '—';
+  }
 }

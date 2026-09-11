@@ -1,23 +1,38 @@
-<h2>Borrow history of {{ book.bookName }}</h2>
-<table class="table table-info table-striped">
+<div class="app-card-header">
+  <div>
+    <h2 class="page-title">📕 Historique d'emprunts</h2>
+    <p class="page-subtitle mb-0">Emprunts du livre sélectionné.</p>
+  </div>
+  <a class="btn btn-outline-secondary btn-sm" routerLink="/books">← Retour au catalogue</a>
+</div>
+
+<div class="app-card mb-3" *ngIf="book">
+  <p class="mb-1"><span class="text-app-muted">Livre :</span> <strong>{{ book.bookName }}</strong></p>
+  <p class="mb-0"><span class="text-app-muted">Auteur :</span> {{ book.bookAuthor }}
+    <span class="text-app-muted ms-3">Genre :</span> {{ book.bookGenre }}</p>
+</div>
+
+<div class="app-table table-responsive">
+  <table class="table table-striped table-hover align-middle">
     <thead>
-        <tr>
-            <th> User ID </th>
-            <th> Issue Date </th>
-            <th> Return Date </th>
-        </tr>
+      <tr>
+        <th>Adhérent</th>
+        <th>Date d'emprunt</th>
+        <th>Date de retour</th>
+      </tr>
     </thead>
     <tbody>
-        <tr *ngFor="let borrower of borrow">
-            <!-- <td> {{ getUserData(borrower.userId) }} </td> -->
-            <td> {{ borrower.userId }} </td>
-            <td> {{ borrower.issueDate }} </td>
-            <div *ngIf="borrower.returnDate != null">
-                <td> {{ borrower.returnDate }} </td>
-            </div>
-            <div *ngIf="borrower.returnDate === null">
-                <td> Book not returned yet </td>
-            </div>
-        </tr>
+      <tr *ngFor="let borrower of borrow">
+        <td class="mono">{{ borrower.userId }}</td>
+        <td>{{ borrower.issueDate }}</td>
+        <td>
+          <span *ngIf="borrower.returnDate !== null">{{ borrower.returnDate }}</span>
+          <span *ngIf="borrower.returnDate === null" class="badge badge-emprunte">Pas encore retourné</span>
+        </td>
+      </tr>
+      <tr *ngIf="!borrow || borrow.length === 0">
+        <td colspan="3" class="text-center text-app-muted">Aucun emprunt pour ce livre.</td>
+      </tr>
     </tbody>
-</table>
+  </table>
+</div>
