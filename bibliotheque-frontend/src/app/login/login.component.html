@@ -4,7 +4,7 @@
       <div class="text-center mb-4">
         <div class="login-icone">📚</div>
         <h2 class="page-title">Connexion</h2>
-        <p class="page-subtitle mb-0">Accédez à votre espace bibliothèque.</p>
+        <p class="page-subtitle mb-0">Adhérent, bibliothécaire ou administrateur : accédez à votre espace.</p>
       </div>
 
       <div *ngIf="messageErreur" class="alert alert-danger" role="alert">{{ messageErreur }}</div>
@@ -13,7 +13,7 @@
         <div class="mb-3">
           <label class="form-label" for="loginUsername">Identifiant</label>
           <input type="text" name="username" ngModel required class="form-control" id="loginUsername" placeholder="Votre identifiant">
-          <div class="form-text">L'identifiant vous a été fourni par le bibliothécaire.</div>
+          <div class="form-text">Utilisez l'identifiant de votre compte, quel que soit votre profil.</div>
         </div>
         <div class="mb-4">
           <label class="form-label" for="loginPassword">Mot de passe</label>

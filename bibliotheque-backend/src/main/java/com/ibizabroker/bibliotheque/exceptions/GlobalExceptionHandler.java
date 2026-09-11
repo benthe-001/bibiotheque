@@ -5,6 +5,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -12,6 +15,26 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * 401 Unauthorized : échec d'authentification sur POST /authenticate
+     * (identifiant inconnu ou mot de passe incorrect). Le front traduit ce
+     * statut en "Identifiant ou mot de passe incorrect" — jamais en 500.
+     */
+    @ExceptionHandler({ BadCredentialsException.class, UsernameNotFoundException.class })
+    public ResponseEntity<ErrorResponseDTO> handleBadCredentials(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponseDTO(null, "Identifiant ou mot de passe incorrect."));
+    }
+
+    /**
+     * 401 Unauthorized : compte désactivé sur POST /authenticate.
+     */
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ErrorResponseDTO> handleDisabledAccount(DisabledException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponseDTO(null, "Ce compte est désactivé. Contactez le bibliothécaire."));
+    }
 
     /**
      * 403 Forbidden : identité connue mais droits insuffisants (règles de sécurité RS-*).
