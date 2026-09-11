@@ -26,6 +26,19 @@ export class ReservationsComponent implements OnInit {
 
   statuts: string[] = ['EN_ATTENTE', 'DISPONIBLE', 'ANNULEE', 'EXPIREE', 'HONOREE'];
 
+  /** Libellés français lisibles pour les statuts (filtre et messages). */
+  private static readonly LIBELLES_STATUTS: { [cle: string]: string } = {
+    'EN_ATTENTE': 'En attente',
+    'DISPONIBLE': 'Disponible',
+    'ANNULEE': 'Annulée',
+    'EXPIREE': 'Expirée',
+    'HONOREE': 'Honorée'
+  };
+
+  libelleStatut(statut: string): string {
+    return ReservationsComponent.LIBELLES_STATUTS[statut] || statut;
+  }
+
   // État du formulaire
   formulaireEnCours: boolean = false;
   messageSucces: string = '';

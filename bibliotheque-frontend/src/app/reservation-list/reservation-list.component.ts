@@ -14,6 +14,19 @@ export class ReservationListComponent {
 
   reservationAConfirmer: number | null = null;
 
+  /** Libellés français lisibles pour les statuts. */
+  private static readonly LIBELLES_STATUTS: { [cle: string]: string } = {
+    'EN_ATTENTE': 'En attente',
+    'DISPONIBLE': 'Disponible',
+    'ANNULEE': 'Annulée',
+    'EXPIREE': 'Expirée',
+    'HONOREE': 'Honorée'
+  };
+
+  libelleStatut(statut: string): string {
+    return ReservationListComponent.LIBELLES_STATUTS[statut] || statut;
+  }
+
   confirmerAnnulation(id: number): void {
     this.reservationAConfirmer = id;
   }

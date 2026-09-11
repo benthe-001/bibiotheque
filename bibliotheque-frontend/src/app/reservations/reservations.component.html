@@ -1,6 +1,11 @@
 <div class="container mt-4">
 
-  <h2>Gestion des réservations</h2>
+<div class="app-card-header">
+  <div>
+    <h2 class="page-title">🔖 Réservations</h2>
+    <p class="page-subtitle mb-0">Réserver un livre indisponible et suivre son tour.</p>
+  </div>
+</div>
 
   <!-- ===== ÉTAT : CHARGEMENT ===== -->
   <div *ngIf="etat === 'CHARGEMENT'" class="text-center my-5">
@@ -24,7 +29,7 @@
             name="filtreStatut"
             [ngModel]="filtreStatut" (ngModelChange)="filtrerParStatut($event)">
       <option value="TOUS">Tous</option>
-      <option *ngFor="let statut of statuts" [value]="statut">{{ statut }}</option>
+      <option *ngFor="let statut of statuts" [value]="statut">{{ libelleStatut(statut) }}</option>
     </select>
   </div>
 

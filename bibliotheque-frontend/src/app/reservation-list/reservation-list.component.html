@@ -1,4 +1,4 @@
-<table class="table table-success table-striped table-hover reservation-table">
+<table class="table table-striped table-hover align-middle reservation-table">
   <thead>
     <tr>
       <th>Livre</th>
@@ -20,7 +20,7 @@
           'bg-secondary text-white': reservation.statut === 'ANNULEE',
           'bg-danger text-white': reservation.statut === 'EXPIREE',
           'bg-primary text-white': reservation.statut === 'HONOREE'
-        }">{{ reservation.statut }}</span>
+        }">{{ libelleStatut(reservation.statut) }}</span>
       </td>
       <td>{{ formaterDate(reservation.dateReservation) }}</td>
       <td>{{ formaterDate(reservation.dateExpiration) }}</td>
