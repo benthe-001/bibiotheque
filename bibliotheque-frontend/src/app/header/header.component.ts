@@ -10,18 +10,22 @@ import { UsersService } from '../_service/users.service';
 })
 export class HeaderComponent implements OnInit {
 
+  name = this.userAuthService.getName();
+  initiale = this.name ? this.name.charAt(0) : '?';
+
   constructor(
-    private userAuthService: UserAuthService, 
+    private userAuthService: UserAuthService,
     private router: Router,
     public userService: UsersService,
   ) { }
 
-  name = this.userAuthService.getName();
   ngOnInit(): void {
+    // Rafraîchit le nom affiché si la session a changé (connexion/déconnexion)
+    this.name = this.userAuthService.getName();
+    this.initiale = this.name ? this.name.charAt(0) : '?';
   }
 
   public isLoggedIn() {
-    console.log(this.name);
     return this.userAuthService.isLoggedIn();
   }
 

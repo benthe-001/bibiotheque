@@ -1,4 +1,70 @@
-.right-text {
-    margin-left: 1000px;
-    font-size: 17px;
+/* ---------- Navbar de l'application ---------- */
+.app-navbar {
+  background: linear-gradient(90deg, var(--app-primary) 0%, #6d28d9 100%);
+  box-shadow: var(--app-shadow-lg);
+}
+
+.app-navbar .navbar-brand {
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.app-navbar .brand-icone {
+  font-size: 1.2rem;
+}
+
+.app-navbar .nav-link {
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.9rem !important;
+  margin: 0 0.1rem;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.app-navbar .nav-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Lien de la page courante : visible et cliquable */
+.app-navbar .nav-link.nav-active {
+  color: #fff;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ---------- Chip utilisateur ---------- */
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 2rem;
+  padding: 0.25rem 0.85rem 0.25rem 0.3rem;
+  color: #fff;
+  font-size: 0.875rem;
+}
+
+.user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--app-primary);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.user-nom {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

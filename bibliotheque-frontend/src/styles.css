@@ -1,2 +1,262 @@
-/* You can add global styles to this file, and also import other style files */
-@import "~bootstrap/dist/css/bootstrap.min.css"
+/* ============================================================
+   Design system "Bibliothèque" — styles globaux partagés
+   Palette, typographie et composants harmonisés sur toutes les pages.
+   ============================================================ */
+
+@import "~bootstrap/dist/css/bootstrap.min.css";
+
+:root {
+  /* Palette */
+  --app-primary: #4f46e5;        /* indigo — identité de l'app */
+  --app-primary-dark: #4338ca;
+  --app-primary-soft: #eef2ff;   /* fond doux indigo */
+  --app-surface: #ffffff;
+  --app-background: #f5f6fa;
+  --app-border: #e5e7eb;
+  --app-text: #1f2937;
+  --app-text-muted: #6b7280;
+
+  /* Formes */
+  --app-radius: 0.75rem;
+  --app-shadow: 0 1px 3px rgba(17, 24, 39, 0.06), 0 1px 2px rgba(17, 24, 39, 0.04);
+  --app-shadow-lg: 0 4px 16px rgba(17, 24, 39, 0.10);
+}
+
+/* ---------- Base ---------- */
+body {
+  background-color: var(--app-background);
+  color: var(--app-text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5 {
+  font-weight: 600;
+  color: var(--app-text);
+}
+
+a {
+  color: var(--app-primary);
+}
+
+/* ---------- Titres de page ---------- */
+.page-title {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.page-subtitle {
+  color: var(--app-text-muted);
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+/* ---------- Cartes ---------- */
+.app-card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow);
+  padding: 1.5rem;
+}
+
+.app-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+/* ---------- Tables ---------- */
+.app-table {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  overflow: hidden;
+  box-shadow: var(--app-shadow);
+}
+
+.app-table table {
+  margin-bottom: 0;
+  color: var(--app-text);
+}
+
+.app-table thead th {
+  background: var(--app-primary-soft);
+  color: var(--app-primary-dark);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--app-border);
+  padding: 0.75rem 1rem;
+  white-space: nowrap;
+}
+
+.app-table tbody td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+}
+
+.app-table tbody tr:hover {
+  background: #fafbff;
+}
+
+/* ---------- Boutons ---------- */
+.btn {
+  font-weight: 500;
+  border-radius: 0.5rem;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--app-primary);
+  --bs-btn-border-color: var(--app-primary);
+  --bs-btn-hover-bg: var(--app-primary-dark);
+  --bs-btn-hover-border-color: var(--app-primary-dark);
+  --bs-btn-active-bg: var(--app-primary-dark);
+  --bs-btn-active-border-color: var(--app-primary-dark);
+  --bs-btn-disabled-bg: var(--app-primary);
+  --bs-btn-disabled-border-color: var(--app-primary);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--app-primary);
+  --bs-btn-border-color: var(--app-primary);
+  --bs-btn-hover-bg: var(--app-primary);
+  --bs-btn-hover-border-color: var(--app-primary);
+  --bs-btn-active-bg: var(--app-primary-dark);
+  --bs-btn-active-border-color: var(--app-primary-dark);
+}
+
+/* Groupe de boutons d'action dans les tables */
+.btn-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ---------- Badges ---------- */
+.badge {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.45em 0.75em;
+  border-radius: 0.4rem;
+}
+
+/* Disponibilité d'un livre */
+.badge-dispo {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-emprunte {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ---------- États (chargement / vide / erreur) ---------- */
+.etat-bloc {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--app-text-muted);
+}
+
+.etat-bloc .spinner-border {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--app-primary);
+}
+
+.etat-icone {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.etat-titre {
+  font-weight: 600;
+  color: var(--app-text);
+  margin-bottom: 0.25rem;
+}
+
+/* ---------- Formulaires ---------- */
+.form-label {
+  font-weight: 500;
+  color: var(--app-text);
+  margin-bottom: 0.4rem;
+}
+
+.form-control, .form-select {
+  border-radius: 0.5rem;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--app-primary);
+  box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.15);
+}
+
+/* ---------- Hero (accueil) ---------- */
+.app-hero {
+  background: linear-gradient(135deg, var(--app-primary) 0%, #7c3aed 100%);
+  color: #fff;
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow-lg);
+  padding: 3rem 2rem;
+  margin-top: 1.5rem;
+}
+
+.app-hero h1 {
+  color: #fff;
+  font-weight: 700;
+}
+
+.app-hero p {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.1rem;
+}
+
+/* Carte de raccourci de l'accueil */
+.quick-link {
+  display: block;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow);
+  padding: 1.25rem;
+  text-decoration: none;
+  color: var(--app-text);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  height: 100%;
+}
+
+.quick-link:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--app-shadow-lg);
+  color: var(--app-primary-dark);
+}
+
+.quick-link .quick-icone {
+  font-size: 1.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.quick-link .quick-titre {
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+.quick-link .quick-texte {
+  color: var(--app-text-muted);
+  font-size: 0.875rem;
+}
+
+/* ---------- Utilitaires ---------- */
+.text-app-muted {
+  color: var(--app-text-muted);
+}
+
+.mono {
+  font-family: Consolas, monospace;
+  font-size: 0.9em;
+}

@@ -7,3 +7,6 @@
 # Logs de build Maven
 bibliotheque-backend/mvn-*.log
 bibliotheque-backend/mvn-*.err.log
+
+# Logs de build Angular
+bibliotheque-frontend/ng-build*
