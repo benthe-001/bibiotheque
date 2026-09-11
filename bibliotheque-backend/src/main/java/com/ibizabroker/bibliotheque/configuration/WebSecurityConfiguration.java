@@ -39,8 +39,11 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.cors();
+        // RS-01 : /api/reservations/** n'est PAS en permitAll — sans token, toute
+        // requête est rejetée en 401 par le JwtAuthenticationEntryPoint. Les rôles
+        // ADHERENT / BIBLIOTHECAIRE sont ensuite vérifiés par @PreAuthorize (403).
         httpSecurity.csrf().disable()
-                .authorizeRequests().antMatchers("/authenticate", "/borrow/**", "/admin/books/", "/admin/users", "/api/reservations/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                .authorizeRequests().antMatchers("/authenticate", "/borrow/**", "/admin/books/", "/admin/users", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 .antMatchers(HttpHeaders.ALLOW).permitAll()
                 .anyRequest().authenticated()
                 .and()
