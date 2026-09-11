@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: bibliotheque
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Benthe@2001
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?renseigner POSTGRES_PASSWORD dans le fichier .env (voir .env.example)}
     ports:
       - "5433:5432"
     volumes:
@@ -27,7 +27,7 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bibliotheque
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: Benthe@2001
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?renseigner POSTGRES_PASSWORD dans le fichier .env (voir .env.example)}
     ports:
       - "8080:8080"
 

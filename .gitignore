@@ -1,2 +1,9 @@
 # Réglages locaux des outils
 .claude/
+
+# Secrets locaux (docker compose) — ne jamais committer
+.env
+
+# Logs de build Maven
+bibliotheque-backend/mvn-*.log
+bibliotheque-backend/mvn-*.err.log
